@@ -247,8 +247,11 @@ if __name__ == '__main__':
 
     print("LLM 기반 분류 테스트\n")
 
-    for inquiry in test_inquiries:
-        print(f"제목: {inquiry['title']}")
+    for i,inquiry in enumerate(test_inquiries):
+        print(f"{i+1}번째 질문입니다.")
+        print(f"질문제목: {inquiry['title']}")
+        print(f"질문내용: {inquiry['content']}")
+        print("-----------------------------------------------")
         result = categorize_with_llm(inquiry['title'], inquiry['content'])
         print(f"분류: {result['label_kr']} ({result['label']})")
         print(f"답변 여부: {result['should_respond']}")
