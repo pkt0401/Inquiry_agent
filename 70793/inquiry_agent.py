@@ -222,10 +222,15 @@ class VectorStore:
 
     # ── 검색 ─────────────────────────────────────────────────────
 
-    def search(self, query: str, label: str = None, top_k: int = 3) -> List[Dict]:
+    def search(self, query: str, label: str = None, top_k: int = 3,
+               similarity_only: bool = False) -> List[Dict]:
         """
         query를 임베딩 후 유사 문서 검색.
-        label 지정 시 동일 라벨 문서를 우선 반환 (나머지는 label=None인 것만 보조).
+
+        similarity_only=False (기본):
+            label 지정 시 동일 라벨 문서를 우선 반환, 부족하면 label=None 문서로 보충.
+        similarity_only=True:
+            label 무시, 순수 코사인 유사도 상위 top_k 반환.
         """
         if self.index is None or self.index.ntotal == 0:
             return []
@@ -244,6 +249,15 @@ class VectorStore:
         k = min(top_k * 6, self.index.ntotal)
         scores, idxs = self.index.search(q, k)
 
+        if similarity_only:
+            # 순수 유사도 순 — label 무관하게 top_k
+            result = []
+            for score, i in zip(scores[0], idxs[0]):
+                if i >= 0:
+                    result.append({**self.payloads[i], "score": float(score)})
+            return result[:top_k]
+
+        # label-aware: 동일 라벨 우선, label=None 보조
         matched, others = [], []
         for score, i in zip(scores[0], idxs[0]):
             if i < 0:
@@ -252,7 +266,7 @@ class VectorStore:
             doc_label = self.payloads[i].get("label")
             if label and doc_label == label:
                 matched.append(p)
-            elif not doc_label:            # 라벨 미지정 문서는 보조로
+            elif not doc_label:
                 others.append(p)
 
         result = matched[:top_k]
@@ -465,19 +479,22 @@ class InquiryAgent:
 
     # ── RAG: FAISS 벡터 검색 기반 KB 검색 ───────────────────────
 
-    def _build_kb_context(self, label: InquiryLabel, inquiry_text: str) -> Tuple[str, float]:
+    def _build_kb_context(self, label: InquiryLabel, inquiry_text: str,
+                          similarity_only: bool = False) -> Tuple[str, float]:
         """
         FAISS 벡터 검색으로 해당 label의 유사 Q&A 최대 3개 + 에러 솔루션 보완.
         vector_store가 없으면 키워드 폴백 사용.
+        similarity_only=True 이면 label 무시하고 순수 유사도 상위 문서를 가져옴.
         반환: (context 문자열, 최고 유사도 점수)  — 유사도가 없으면 0.0
         """
         parts: List[str] = []
         text_lower = inquiry_text.lower()
         max_score = 0.0
 
-        # ① FAISS 벡터 검색 (label-aware: 동일 라벨 우선)
+        # ① FAISS 벡터 검색
         if self.vector_store and self.vector_store.index:
-            hits = self.vector_store.search(inquiry_text, label=label.value, top_k=3)
+            hits = self.vector_store.search(inquiry_text, label=label.value, top_k=3,
+                                            similarity_only=similarity_only)
             for hit in hits:
                 max_score = max(max_score, hit.get("score", 0.0))
                 q_short = hit.get("title", "")

@@ -37,16 +37,10 @@
 ### 전체 흐름도
 
 ```
-문의 입력
+문의 입력 (title + content, HTML → 텍스트 변환)
     │
     ▼
-[Step 0] 날짜 만료 체크  (create_dt 있는 경우만)
-    │  datetime.now() - create_dt > 30일
-    │
-    ├─ 30일 초과   → no_response  (운영자 에스컬레이션, LLM 미호출)
-    │
-    ▼ (30일 이내 또는 create_dt 없음)
-[Step 1] LLM 분류
+[Step 1] LLM 분류  (GPT-4o-mini)
     │  ↑ prior_knowledge (플랫폼 사전 지식) 주입
     │  ↑ 라벨별 설명 + 실제 예시 제목 주입 (knowledge_base.json)
     │
@@ -57,20 +51,28 @@
 [Step 2] 코드가 strategy 결정
     │
     ├─ Group 1 라벨 OR confidence == low
-    │      → no_response   (운영자 에스컬레이션)
+    │      → no_response   (운영자 에스컬레이션, 답변 생성 없음)
     │
     ├─ confidence == medium
-    │      → human_review  (RAG 초안 생성 + 운영자 검토 후 게시)
+    │      → human_review  (RAG 검색 후 [초안] 답변 생성, 운영자 검토 후 게시)
+    │      └── is_draft=True
     │
     └─ confidence == high / very_high  (Group 2)
-           → tool_rag      (RAG 자동 답변 게시)
+           → RAG 검색 후 max_score 확인
                 │
-                ▼
-         [Step 3] Label-aware RAG
-           ① 해당 label 큐레이션 예제 (knowledge_base.json) — 키워드 유사도 정렬 상위 2개
-           ② 에러 솔루션 (CODE_LOGIC_ERROR 라벨 또는 에러 메시지 감지 시)
-           ③ Train/Test history 중 동일 label + 운영자 답변 있는 과거 Q&A
-           ④ 과정 정보 (COURSE_INFO 라벨 시 prior_knowledge 과정 정보 추가)
+                ├─ max_score < 0.65  → human_review 다운그레이드 (초안 답변, 운영자 검토)
+                │                        is_draft=True
+                │
+                └─ max_score ≥ 0.65  → tool_rag  (최종 답변 자동 게시)
+                                         is_draft=False
+
+[Step 3] RAG 검색  (_build_kb_context)
+    FAISS 유사도 검색 (top_k×6 후보) → label-aware 필터링
+    ① 동일 label 문서 우선 (kb_curated → history 순)
+    ② 동일 label 부족 시 label=None history로 보충
+    ③ CODE_LOGIC_ERROR 또는 에러 키워드 → error_solutions regex 보완
+    ④ COURSE_INFO 라벨 → prior_knowledge.programs 과정 정보 추가
+    → max_score 반환 (Step 2 다운그레이드 판단에 사용)
 ```
 
 ---
@@ -135,11 +137,19 @@
 - `label` → 10개 카테고리 중 하나
 - `confidence_level` → very_high / high / medium / low
 
-**코드가 결정하는 것 (2가지)**
+**코드가 결정하는 것 (3가지)**
 ```python
+# Step 2: 기본 strategy 결정
 label in Group1 OR confidence == 'low'   → should_respond=False, strategy='no_response'
 confidence == 'medium'                   → should_respond=True,  strategy='human_review'
 confidence == 'very_high' / 'high'       → should_respond=True,  strategy='tool_rag'
+
+# Step 3: RAG 유사도 기반 다운그레이드 (tool_rag만 해당)
+strategy == 'tool_rag' AND max_rag_score < 0.65
+    → strategy='human_review'  (RAG 예시 품질 부족 → 운영자 검토 필요)
+
+# 답변 초안 여부: confidence가 아닌 최종 strategy 기준
+is_draft = (strategy == 'human_review')  # [초안] 태그 부착 여부
 ```
 
 ---
@@ -176,22 +186,37 @@ confidence == 'very_high' / 'high'       → should_respond=True,  strategy='too
 | 임베딩 모델 | OpenAI `text-embedding-3-small` (1536차원) |
 | 인덱스 | FAISS `IndexFlatIP` (코사인 유사도, L2 정규화 후 inner product) |
 | 캐시 | `embeddings_cache.pkl` — 재실행 시 API 미호출 |
-| 검색 방식 | label-aware: 동일 label 문서 우선 반환, label=None 문서 보조 |
+| 검색 방식 | **label-aware** (기본): 동일 label 우선, label=None 보조<br>**similarity-only** (비교용): label 무시, 순수 유사도 상위 반환 |
+| 다운그레이드 임계값 | `RAG_CONFIDENCE_THRESHOLD = 0.65` — 미만이면 tool_rag → human_review |
 
-### RAG 검색 우선순위
+### RAG 검색 흐름 (label-aware 기본 모드)
 
 ```
-① FAISS 벡터 검색 (label-aware, top-3)
-   → 동일 label 문서를 cosine 유사도 순으로 우선 반환
-   → 인덱스 대상: KB 큐레이션 Q&A + 에러 솔루션 + history(운영자 답변 있는 것)
-   → 동일 label 결과 부족 시 label=None 문서로 보완
+FAISS 검색 (top_k × 6 = 18개 후보, 유사도 순)
+    │
+    ├─ 동일 label 문서 → matched (우선)
+    ├─ label=None 문서 → others  (보조, matched 부족 시만)
+    └─ 다른 label 문서 → 버림
+    │
+    ▼ 최대 top_k=3개 선택, max_score 추출
 
-② 에러 솔루션 정규식 보완
-   → CODE_LOGIC_ERROR 라벨이거나, 에러 키워드 감지 시 정규식 매칭 추가
-
-③ 과정 정보 보완 (COURSE_INFO 라벨)
-   → prior_knowledge.programs 에서 키워드 매칭된 과정 정보 추가
++ 에러 솔루션 regex 보완  (CODE_LOGIC_ERROR 또는 에러 키워드 감지 시)
++ 과정 정보 보완           (COURSE_INFO 라벨 시)
 ```
+
+### label=None history란?
+
+history 문의에 휴리스틱 라벨(9개 regex)을 부여하는데, 어떤 패턴도 매칭되지 않으면 `label=None`.
+검색 시 동일 label 문서가 top_k에 못 미칠 때만 보조로 사용됨 (노이즈 최소화).
+
+### 검색 모드 비교 (`compare_rag_modes.py`)
+
+두 모드를 같은 문의에 대해 실행, 검색된 예시 + 생성 답변을 나란히 비교:
+
+| 모드 | 설명 | 활성화 방법 |
+|------|------|------------|
+| Mode A (label-aware) | 동일 label 우선 필터 | 기본값 |
+| Mode B (similarity-only) | label 무시, 순수 유사도 | `similarity_only=True` |
 
 ### FAISS 인덱스 구성 문서
 
@@ -247,7 +272,23 @@ FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
 
 ---
 
-## 10. 다음 단계
+## 10. 구현 파일 목록
+
+| 파일 | 설명 |
+|------|------|
+| `inquiry_agent.py` | 메인 Agent (분류·RAG·답변 생성) |
+| `knowledge_base.json` | 사전 지식 + 큐레이션 Q&A + 에러 솔루션 |
+| `inquiry.json` / `inquiry_comment.json` | Train 데이터 (84건 문의 / 90건 댓글) |
+| `inquiry_test.json` / `inquiry_comment_test.json` | Test 데이터 (98건 / 112건) |
+| `test.json` | 18개 테스트 케이스 (중복 제거, 7개 label 커버) |
+| `compare_rag_modes.py` | Mode A vs B 검색 예시 + 답변 비교 스크립트 |
+| `pipeline_viz.html` | 전체 파이프라인 시각화 (브라우저에서 열기) |
+| `embeddings_cache.pkl` | 임베딩 캐시 (재실행 시 API 미호출) |
+| `requirements.txt` | `openai>=1.0.0`, `faiss-cpu==1.7.4`, `numpy>=1.24.0,<2` |
+
+---
+
+## 11. 다음 단계
 
 | Phase | 내용 |
 |-------|------|
