@@ -20,7 +20,6 @@ import re
 import os
 import hashlib
 import pickle
-from datetime import datetime
 import numpy as np
 import faiss
 from html.parser import HTMLParser
@@ -104,6 +103,9 @@ GROUP2 = {
     InquiryLabel.CODE_LOGIC_ERROR,
 }
 
+# RAG 유사도 임계값: 이 값 미만이면 tool_rag → human_review 다운그레이드
+RAG_CONFIDENCE_THRESHOLD = 0.65
+
 
 # ──────────────────────────────────────────────────────────────────
 # 신뢰도 / Strategy
@@ -120,10 +122,6 @@ class Strategy(str, Enum):
     NO_RESPONSE   = "no_response"
     HUMAN_REVIEW  = "human_review"
     TOOL_RAG      = "tool_rag"
-
-
-# 문의 등록일 기준 이 일수를 초과하면 운영자 에스컬레이션
-STALE_DAYS = 30
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -456,24 +454,6 @@ class InquiryAgent:
 
     # ── Step 2: Strategy 결정 ─────────────────────────────────────
 
-    @staticmethod
-    def _is_stale(inquiry: Dict) -> Tuple[bool, str]:
-        """
-        inquiry의 create_dt가 STALE_DAYS일 초과이면 (True, 날짜문자열) 반환.
-        create_dt 없거나 파싱 실패 시 (False, '') 반환.
-        """
-        create_dt_str = inquiry.get("create_dt", "")
-        if not create_dt_str:
-            return False, ""
-        try:
-            create_dt = datetime.strptime(create_dt_str, "%Y-%m-%d %H:%M:%S")
-            days_elapsed = (datetime.now() - create_dt).days
-            if days_elapsed > STALE_DAYS:
-                return True, create_dt_str
-        except (ValueError, TypeError):
-            pass
-        return False, ""
-
     def _determine_strategy(
         self, label: InquiryLabel, confidence: ConfidenceLevel
     ) -> Tuple[Strategy, bool]:
@@ -485,18 +465,21 @@ class InquiryAgent:
 
     # ── RAG: FAISS 벡터 검색 기반 KB 검색 ───────────────────────
 
-    def _build_kb_context(self, label: InquiryLabel, inquiry_text: str) -> str:
+    def _build_kb_context(self, label: InquiryLabel, inquiry_text: str) -> Tuple[str, float]:
         """
         FAISS 벡터 검색으로 해당 label의 유사 Q&A 최대 3개 + 에러 솔루션 보완.
         vector_store가 없으면 키워드 폴백 사용.
+        반환: (context 문자열, 최고 유사도 점수)  — 유사도가 없으면 0.0
         """
         parts: List[str] = []
         text_lower = inquiry_text.lower()
+        max_score = 0.0
 
         # ① FAISS 벡터 검색 (label-aware: 동일 라벨 우선)
         if self.vector_store and self.vector_store.index:
             hits = self.vector_store.search(inquiry_text, label=label.value, top_k=3)
             for hit in hits:
+                max_score = max(max_score, hit.get("score", 0.0))
                 q_short = hit.get("title", "")
                 a_short = hit.get("answer", "")[:300]
                 tag = f"[유사 예제 ({hit.get('type','?')} | score={hit['score']:.3f})]"
@@ -535,7 +518,7 @@ class InquiryAgent:
                     parts.append(f"[과정 정보]\n{desc}")
                     break
 
-        return "\n\n".join(parts) if parts else "관련 KB 정보 없음"
+        return "\n\n".join(parts) if parts else "관련 KB 정보 없음", max_score
 
     # ── 답변 생성 ─────────────────────────────────────────────────
 
@@ -545,11 +528,13 @@ class InquiryAgent:
         label: InquiryLabel,
         confidence: ConfidenceLevel,
         kb_context: str,
+        is_draft: bool = None,   # strategy 기반으로 외부에서 주입; None이면 confidence로 판단
     ) -> str:
         title   = inquiry.get('title', '')
         content = self._strip_html(inquiry.get('content', ''))
         lang    = self.detect_language(title + " " + content)
-        is_draft = (confidence == ConfidenceLevel.MEDIUM)
+        if is_draft is None:
+            is_draft = (confidence == ConfidenceLevel.MEDIUM)
 
         prior_knowledge = self._prior_knowledge_section()
 
@@ -599,18 +584,6 @@ class InquiryAgent:
         content = self._strip_html(inquiry.get('content', ''))
         inquiry_text = title + " " + content
 
-        # Step 0: 날짜 만료 체크 (create_dt 기준 STALE_DAYS일 초과 시 에스컬레이션)
-        stale, stale_dt = self._is_stale(inquiry)
-        if stale:
-            return AgentResponse(
-                strategy=Strategy.NO_RESPONSE,
-                should_respond=False,
-                label=InquiryLabel.UNCATEGORIZED,
-                confidence_level=ConfidenceLevel.LOW,
-                answer=None,
-                reasoning=f"문의 등록일({stale_dt})이 현재 기준 {STALE_DAYS}일 초과 — 운영자 에스컬레이션",
-            )
-
         # Step 1: LLM 분류
         classification = self._llm_classify(inquiry)
 
@@ -629,10 +602,21 @@ class InquiryAgent:
                 reasoning=classification.rationale,
             )
 
-        # RAG 검색 후 답변 생성
-        kb_context = self._build_kb_context(classification.label, inquiry_text)
+        # RAG 검색
+        kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text)
+
+        # RAG 유사도가 낮으면 human_review로 다운그레이드 (tool_rag인 경우에만)
+        if strategy == Strategy.TOOL_RAG and max_rag_score < RAG_CONFIDENCE_THRESHOLD:
+            strategy = Strategy.HUMAN_REVIEW
+            classification.rationale += (
+                f" [RAG 유사도 낮음: {max_rag_score:.3f} < {RAG_CONFIDENCE_THRESHOLD}]"
+            )
+
+        # strategy 기준으로 is_draft 결정:
+        # MEDIUM → 항상 초안, TOOL_RAG→HUMAN_REVIEW 다운그레이드된 경우도 초안
         answer = self._generate_answer(
-            inquiry, classification.label, classification.confidence_level, kb_context
+            inquiry, classification.label, classification.confidence_level, kb_context,
+            is_draft=(strategy == Strategy.HUMAN_REVIEW),
         )
 
         # history 기록 (label 저장)

@@ -1,7 +1,7 @@
 {
   "prior_knowledge": {
     "platform": "AI Talent Lab",
-    "description": "AI Talent Lab은 LG그룹의 AI 교육 플랫폼으로, 임직원 대상 AI 역량 개발 과정을 운영합니다.",
+    "description": "AI Talent Lab은 SK AX그룹의 AI 교육 플랫폼으로, 임직원 대상 AI 역량 개발 과정을 운영합니다.",
     "programs": [
       {
         "id": "ai-literacy",

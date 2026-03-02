@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>AI Talent Lab 문의 Agent — Pipeline</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; padding: 20px; background: #f1f5f9; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; }
+h1 { text-align: center; color: #1e293b; font-size: 19px; margin: 0 0 16px; }
+.wrap { max-width: 1000px; margin: 0 auto; }
+svg { display: block; width: 100%; height: auto; border-radius: 14px; box-shadow: 0 4px 24px rgba(0,0,0,.12); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>AI Talent Lab 문의 Agent — 전체 파이프라인</h1>
+<svg viewBox="0 0 960 1090" xmlns="http://www.w3.org/2000/svg">
+
+<defs>
+  <marker id="a"  markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="#9ca3af"/></marker>
+  <marker id="ar" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="#ef4444"/></marker>
+  <marker id="ay" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="#f59e0b"/></marker>
+  <marker id="ag" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="#10b981"/></marker>
+</defs>
+
+<!-- ════════════════════════════════════ INIT ════════════════════════════════════ -->
+<rect x="10" y="10" width="940" height="360" rx="14" fill="#eff6ff" stroke="#bfdbfe" stroke-width="2"/>
+<text x="28" y="40" font-size="15" font-weight="bold" fill="#1e40af" font-family="'Malgun Gothic',sans-serif">🔧 초기화  (시작 시 1회 실행)</text>
+
+<!-- 파일 박스 -->
+<rect x="25"  y="55" width="215" height="65" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="132" y="79"  text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8" font-family="'Malgun Gothic',sans-serif">inquiry.json</text>
+<text x="132" y="97"  text-anchor="middle" font-size="11" fill="#3b82f6" font-family="'Malgun Gothic',sans-serif">inquiry_test.json</text>
+<text x="132" y="113" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">문의 원문 (train + test)</text>
+
+<rect x="260" y="55" width="235" height="65" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="377" y="79"  text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8" font-family="'Malgun Gothic',sans-serif">inquiry_comment.json</text>
+<text x="377" y="97"  text-anchor="middle" font-size="11" fill="#3b82f6" font-family="'Malgun Gothic',sans-serif">inquiry_comment_test.json</text>
+<text x="377" y="113" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">운영자 댓글 데이터</text>
+
+<rect x="675" y="55" width="260" height="65" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="805" y="79"  text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8" font-family="'Malgun Gothic',sans-serif">knowledge_base.json</text>
+<text x="805" y="97"  text-anchor="middle" font-size="10" fill="#3b82f6" font-family="'Malgun Gothic',sans-serif">prior_knowledge · label_examples</text>
+<text x="805" y="113" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">error_solutions (26 Q&amp;A + 5 에러)</text>
+
+<!-- 화살표: 파일 → load_inquiry_history -->
+<line x1="132" y1="120" x2="132" y2="178" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#a)"/>
+<line x1="377" y1="120" x2="377" y2="178" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#a)"/>
+
+<rect x="25" y="180" width="460" height="58" rx="8" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>
+<text x="255" y="205" text-anchor="middle" font-size="12" font-weight="bold" fill="#374151" font-family="'Malgun Gothic',sans-serif">load_inquiry_history(pre_label=True)</text>
+<text x="255" y="223" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">운영자 답변 있는 문의 추출 · 휴리스틱 라벨(9개 regex) 부여</text>
+
+<!-- KB → build_vector_index 꺾임 화살표 -->
+<path d="M 805 120 L 805 258 L 512 258" stroke="#9ca3af" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
+<!-- load → build_vector_index -->
+<line x1="255" y1="238" x2="255" y2="272" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#a)"/>
+
+<rect x="25" y="274" width="620" height="55" rx="8" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>
+<text x="335" y="298" text-anchor="middle" font-size="12" font-weight="bold" fill="#374151" font-family="'Malgun Gothic',sans-serif">build_vector_index()</text>
+<text x="335" y="317" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">OpenAI text-embedding-3-small 임베딩 · 캐시: embeddings_cache.pkl</text>
+
+<line x1="335" y1="329" x2="335" y2="344" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#a)"/>
+
+<rect x="25" y="346" width="920" height="54" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2.5"/>
+<text x="485" y="370" text-anchor="middle" font-size="13" font-weight="bold" fill="#92400e" font-family="'Malgun Gothic',sans-serif">⚡ FAISS IndexFlatIP  (코사인 유사도)</text>
+<text x="485" y="389" text-anchor="middle" font-size="11" fill="#b45309" font-family="'Malgun Gothic',sans-serif">📚 kb_curated 26개   |   ⚠️ error_solution 5개   |   📝 history (운영자 답변 있는 것만)</text>
+
+
+<!-- ═══════════════════════════════════ PROCESS ══════════════════════════════════ -->
+<rect x="10" y="388" width="940" height="690" rx="14" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="2"/>
+<text x="28" y="415" font-size="15" font-weight="bold" fill="#166534" font-family="'Malgun Gothic',sans-serif">⚙️ 문의 처리  (매 요청)</text>
+
+<line x1="485" y1="400" x2="485" y2="428" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#a)"/>
+
+<!-- 문의 입력 -->
+<rect x="330" y="430" width="300" height="52" rx="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<text x="480" y="453" text-anchor="middle" font-size="13" font-weight="bold" fill="#0c4a6e" font-family="'Malgun Gothic',sans-serif">문의 입력</text>
+<text x="480" y="472" text-anchor="middle" font-size="10" fill="#0284c7" font-family="'Malgun Gothic',sans-serif">title + content  (HTML → 텍스트 변환)</text>
+
+<line x1="480" y1="482" x2="480" y2="500" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#a)"/>
+
+<!-- Step 1: LLM 분류 -->
+<rect x="185" y="502" width="590" height="75" rx="8" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+<text x="480" y="526" text-anchor="middle" font-size="13" font-weight="bold" fill="#064e3b" font-family="'Malgun Gothic',sans-serif">Step 1: LLM 분류  (GPT-4o-mini)</text>
+<text x="480" y="546" text-anchor="middle" font-size="10" fill="#065f46" font-family="'Malgun Gothic',sans-serif">prior_knowledge 주입  |  label_descriptions 주입 (10개 카테고리 정의)</text>
+<text x="480" y="564" text-anchor="middle" font-size="10" fill="#065f46" font-family="'Malgun Gothic',sans-serif">→ label (10개)  +  confidence_level (very_high / high / medium / low)</text>
+
+<line x1="480" y1="577" x2="480" y2="596" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#a)"/>
+
+<!-- Step 2: Strategy 결정 -->
+<rect x="130" y="598" width="700" height="55" rx="8" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>
+<text x="480" y="622" text-anchor="middle" font-size="13" font-weight="bold" fill="#374151" font-family="'Malgun Gothic',sans-serif">Step 2: Strategy 결정</text>
+<text x="480" y="641" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">Group(1/2) × confidence_level → 3가지 경로 분기</text>
+
+<!-- ─── 3개 분기 화살표 ─── -->
+<!-- 왼쪽: Group1/LOW → NO_RESPONSE -->
+<path d="M 240 653 L 125 673" stroke="#ef4444" stroke-width="1.8" fill="none" marker-end="url(#ar)"/>
+<text x="150" y="667" text-anchor="middle" font-size="10" fill="#ef4444" font-family="'Malgun Gothic',sans-serif">Group1 또는 LOW</text>
+
+<!-- 가운데: Group2+MEDIUM → HUMAN_REVIEW 경로 -->
+<path d="M 480 653 L 391 673" stroke="#f59e0b" stroke-width="1.8" fill="none" marker-end="url(#ay)"/>
+<text x="424" y="667" text-anchor="middle" font-size="10" fill="#f59e0b" font-family="'Malgun Gothic',sans-serif">Group2 + MEDIUM</text>
+
+<!-- 오른쪽: Group2+HIGH/VH → RAG 유사도 경로 -->
+<path d="M 720 653 L 748 673" stroke="#10b981" stroke-width="1.8" fill="none" marker-end="url(#ag)"/>
+<text x="756" y="667" text-anchor="middle" font-size="10" fill="#10b981" font-family="'Malgun Gothic',sans-serif">Group2 + HIGH / VH</text>
+
+
+<!-- ═══ 왼쪽 열: NO_RESPONSE ═══ -->
+<rect x="20" y="675" width="210" height="75" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+<text x="125" y="700" text-anchor="middle" font-size="13" font-weight="bold" fill="#991b1b" font-family="'Malgun Gothic',sans-serif">🔴 NO_RESPONSE</text>
+<text x="125" y="718" text-anchor="middle" font-size="11" fill="#ef4444" font-family="'Malgun Gothic',sans-serif">운영자 에스컬레이션</text>
+<text x="125" y="736" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">답변 생성 없음</text>
+
+
+<!-- ═══ 가운데 열: MEDIUM 경로 ═══ -->
+<!-- RAG 검색 (MEDIUM용) -->
+<rect x="242" y="675" width="298" height="70" rx="8" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>
+<text x="391" y="699" text-anchor="middle" font-size="12" font-weight="bold" fill="#374151" font-family="'Malgun Gothic',sans-serif">RAG 검색</text>
+<text x="391" y="717" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">FAISS 유사도 검색 → label 필터</text>
+<text x="391" y="734" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">답변 생성용 context 수집</text>
+
+<line x1="391" y1="745" x2="391" y2="778" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#ay)"/>
+
+<!-- HUMAN_REVIEW 박스 -->
+<rect x="242" y="780" width="298" height="92" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2.5"/>
+<text x="391" y="805" text-anchor="middle" font-size="13" font-weight="bold" fill="#92400e" font-family="'Malgun Gothic',sans-serif">🟡 HUMAN_REVIEW</text>
+<text x="391" y="824" text-anchor="middle" font-size="11" fill="#b45309" font-family="'Malgun Gothic',sans-serif">GPT-4o-mini → [초안] 답변 생성</text>
+<text x="391" y="842" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">is_draft=True  (strategy == HUMAN_REVIEW)</text>
+<text x="391" y="859" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">운영자 검토 후 게시</text>
+
+
+<!-- ═══ 오른쪽 열: HIGH/VH 경로 ═══ -->
+<!-- RAG 검색 (HIGH/VH용) -->
+<rect x="558" y="675" width="380" height="70" rx="8" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>
+<text x="748" y="699" text-anchor="middle" font-size="12" font-weight="bold" fill="#374151" font-family="'Malgun Gothic',sans-serif">RAG 검색</text>
+<text x="748" y="717" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">FAISS 유사도 검색 → label 필터</text>
+<text x="748" y="734" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">max_score 추출</text>
+
+<line x1="748" y1="745" x2="748" y2="778" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#a)"/>
+
+<!-- RAG 유사도 체크 박스 -->
+<rect x="558" y="780" width="380" height="65" rx="8" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+<text x="748" y="805" text-anchor="middle" font-size="12" font-weight="bold" fill="#713f12" font-family="'Malgun Gothic',sans-serif">RAG 유사도 체크</text>
+<text x="748" y="824" text-anchor="middle" font-size="10" fill="#92400e" font-family="'Malgun Gothic',sans-serif">max_score  vs  RAG_CONFIDENCE_THRESHOLD (0.65)</text>
+
+<!-- score < 0.65 → 왼쪽 HUMAN_REVIEW로 넘어가는 화살표 -->
+<path d="M 558 812 L 541 812" stroke="#f59e0b" stroke-width="1.8" fill="none" marker-end="url(#ay)"/>
+<text x="548" y="803" text-anchor="middle" font-size="10" fill="#f59e0b" font-family="'Malgun Gothic',sans-serif">score &lt; 0.65</text>
+<text x="548" y="823" text-anchor="middle" font-size="10" fill="#f59e0b" font-family="'Malgun Gothic',sans-serif">다운그레이드</text>
+
+<!-- score ≥ 0.65 → TOOL_RAG 화살표 -->
+<line x1="748" y1="845" x2="748" y2="878" stroke="#10b981" stroke-width="1.8" marker-end="url(#ag)"/>
+<text x="783" y="865" font-size="10" fill="#10b981" font-family="'Malgun Gothic',sans-serif">score ≥ 0.65</text>
+
+<!-- TOOL_RAG 박스 -->
+<rect x="598" y="880" width="300" height="92" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="2.5"/>
+<text x="748" y="905" text-anchor="middle" font-size="13" font-weight="bold" fill="#064e3b" font-family="'Malgun Gothic',sans-serif">🟢 TOOL_RAG</text>
+<text x="748" y="924" text-anchor="middle" font-size="11" fill="#065f46" font-family="'Malgun Gothic',sans-serif">GPT-4o-mini → 최종 답변 생성</text>
+<text x="748" y="942" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">is_draft=False  (strategy == TOOL_RAG)</text>
+<text x="748" y="959" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Malgun Gothic',sans-serif">자동 게시</text>
+
+<!-- ─── AgentResponse 수렴 화살표 ─── -->
+<!-- NO_RESPONSE → 왼쪽 벽 타고 내려오기 -->
+<path d="M 125 750 L 22 750 L 22 990" stroke="#9ca3af" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
+
+<!-- HUMAN_REVIEW → 아래로 -->
+<line x1="391" y1="872" x2="391" y2="990" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#a)"/>
+
+<!-- TOOL_RAG → 아래로 -->
+<line x1="748" y1="972" x2="748" y2="990" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#a)"/>
+
+<!-- AgentResponse (전체 너비) -->
+<rect x="18" y="992" width="924" height="58" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+<text x="480" y="1018" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b" font-family="'Malgun Gothic',sans-serif">AgentResponse 반환</text>
+<text x="480" y="1038" text-anchor="middle" font-size="11" fill="#64748b" font-family="'Malgun Gothic',sans-serif">label  ·  confidence_level  ·  strategy  ·  answer  ·  reasoning</text>
+
+<!-- ─── 범례 ─── -->
+<rect x="18" y="1058" width="924" height="22" rx="6" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+<text x="480" y="1074" text-anchor="middle" font-size="10" fill="#64748b" font-family="'Malgun Gothic',sans-serif">
+  🟡 HUMAN_REVIEW  =  MEDIUM 신뢰도  |  HIGH/VH + RAG score &lt; 0.65 (다운그레이드)  —  두 경우 모두 is_draft=True → [초안] 태그 부착
+</text>
+
+</svg>
+</div>
+</body>
+</html>
