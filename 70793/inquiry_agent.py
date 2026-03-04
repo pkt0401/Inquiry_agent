@@ -491,14 +491,21 @@ class InquiryAgent:
         self, label: InquiryLabel, confidence: ConfidenceLevel,
         classification: 'LLMClassification' = None,
     ) -> Tuple[Strategy, bool]:
-        # 복합 문의: sub_labels 가 2개 이상 다른 카테고리에 걸치면 → HUMAN_REVIEW
-        # - Group1 포함 시: 운영자 직접 조치 필요 항목이 있으므로 반드시 검토
-        # - Group2만 있어도: RAG는 label 하나 기준으로만 검색하여 나머지 질문은 답변 누락될 수 있음
+        # 복합 문의 처리
         if classification and classification.is_compound and len(classification.sub_labels) >= 2:
-            valid_sub = [InquiryLabel(sl) for sl in classification.sub_labels
-                         if sl in {l.value for l in InquiryLabel}]
-            if len(set(valid_sub)) >= 2:
-                return Strategy.HUMAN_REVIEW, True
+            valid_sub = list(dict.fromkeys(          # 순서 보존 dedup
+                InquiryLabel(sl) for sl in classification.sub_labels
+                if sl in {l.value for l in InquiryLabel}
+            ))
+            if len(valid_sub) >= 2:
+                # Group1 포함 → human_review (운영자 직접 조치 필요)
+                if any(sl in GROUP1 for sl in valid_sub):
+                    return Strategy.HUMAN_REVIEW, True
+                # Group2만 4개 이상 → human_review (복잡도 초과)
+                if len(valid_sub) > 3:
+                    return Strategy.HUMAN_REVIEW, True
+                # Group2만 2-3개 → tool_rag (각 label별 RAG 합산, process_inquiry에서 처리)
+                return Strategy.TOOL_RAG, True
 
         if label in GROUP1 or confidence == ConfidenceLevel.LOW:
             return Strategy.NO_RESPONSE, False
@@ -575,6 +582,7 @@ class InquiryAgent:
         confidence: ConfidenceLevel,
         kb_context: str,
         is_draft: bool = None,   # strategy 기반으로 외부에서 주입; None이면 confidence로 판단
+        compound_labels: List[InquiryLabel] = None,  # 복합 문의 시 각 sub_label 목록
     ) -> str:
         title   = inquiry.get('title', '')
         content = self._strip_html(inquiry.get('content', ''))
@@ -590,13 +598,19 @@ class InquiryAgent:
             'jp': 'こんにちは、AI Talent Labです。',
         }
 
+        if compound_labels and len(compound_labels) >= 2:
+            labels_str = " / ".join(l.value for l in compound_labels)
+            category_line = f"이 문의는 복합 문의({labels_str})야. KB 정보의 각 섹션을 참고해서 질문 순서대로 빠짐없이 답변해줘."
+        else:
+            category_line = f"이 문의는 \"{label.value}\" 카테고리로 분류되었어."
+
         system_prompt = f"""너는 AI Talent Lab 문의 답변 Agent야.
 {'※ 이 답변은 운영자 검토용 초안이야. [초안] 태그로 시작해.' if is_draft else ''}
 
 {prior_knowledge}
 
 [답변 규칙]
-- 이 문의는 "{label.value}" 카테고리로 분류되었어.
+- {category_line}
 - 언어: {'한국어' if lang == 'ko' else '영어' if lang == 'en' else '일본어'}
 - 인사말로 시작: {greetings.get(lang, greetings['ko'])}
 - 아래 KB 정보를 우선 참고해서 답변해. KB 정보에 있는 내용은 그대로 활용해.
@@ -651,7 +665,27 @@ class InquiryAgent:
             )
 
         # RAG 검색
-        kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text)
+        compound_labels_for_rag = None
+
+        # 복합 문의 (Group2만, 2-3개): sub_labels 각각 RAG 후 context 합산
+        if classification.is_compound and strategy == Strategy.TOOL_RAG:
+            valid_sub = list(dict.fromkeys(
+                InquiryLabel(sl) for sl in classification.sub_labels
+                if sl in {l.value for l in InquiryLabel}
+            ))
+            if len(valid_sub) >= 2 and all(sl in GROUP2 for sl in valid_sub):
+                ctx_parts, scores = [], []
+                for sub_lbl in valid_sub:
+                    ctx, score = self._build_kb_context(sub_lbl, inquiry_text)
+                    ctx_parts.append(f"[{sub_lbl.value} 관련]\n{ctx}")
+                    scores.append(score)
+                kb_context = "\n\n---\n\n".join(ctx_parts)
+                max_rag_score = min(scores)   # 가장 낮은 score 기준으로 다운그레이드 판단
+                compound_labels_for_rag = valid_sub
+            else:
+                kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text)
+        else:
+            kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text)
 
         # RAG 유사도가 낮으면 human_review로 다운그레이드 (tool_rag인 경우에만)
         if strategy == Strategy.TOOL_RAG and max_rag_score < RAG_CONFIDENCE_THRESHOLD:
@@ -665,6 +699,7 @@ class InquiryAgent:
         answer = self._generate_answer(
             inquiry, classification.label, classification.confidence_level, kb_context,
             is_draft=(strategy == Strategy.HUMAN_REVIEW),
+            compound_labels=compound_labels_for_rag,
         )
 
         # history 기록 (label 저장)
@@ -916,7 +951,13 @@ def main():
         print(f"[신뢰도]      {response.confidence_level.value}")
         print(f"[Strategy]    {strategy_labels[response.strategy]}")
         if response.is_compound:
-            print(f"[복합 문의]   sub_labels={response.sub_labels}")
+            sub_labels = response.sub_labels
+            all_group2 = all(
+                sl in {l.value for l in GROUP2} for sl in sub_labels
+            )
+            multi_rag = all_group2 and 2 <= len(set(sub_labels)) <= 3
+            mode = "multi-RAG 합산" if multi_rag else "human_review 라우팅"
+            print(f"[복합 문의]   sub_labels={sub_labels}  ({mode})")
         print(f"[판단 근거]   {response.reasoning}")
 
         if response.answer:

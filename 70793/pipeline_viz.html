@@ -447,10 +447,17 @@
           <!-- Case B -->
           <div style="background:#1a1330; border:1px solid #6c3483; border-radius:8px; padding:10px 13px; font-size:0.78rem; line-height:1.55;">
             <div style="font-weight:700; color:#a078c8; margin-bottom:5px;">Case B &mdash; Group2만 포함</div>
-            <code>sub_labels</code> 모두 Group2 라벨이지만 2가지 이상<br>
-            <span style="color:#8a7aaa;">→ RAG는 대표 label 1개 기준으로만 검색하여 나머지 질문은 답변 누락 위험</span><br><br>
-            <span style="color:#a078c8; font-size:0.74rem;">예) sub_labels=['SUBMISSION_POLICY', 'COURSE_INFO']<br>
-            Q1=과제 제출 정책 + Q2=커리큘럼 일정 → 둘 다 RAG 가능하나 검색 누락 방지</span>
+            <code>sub_labels</code> 모두 Group2, 개수에 따라 분기<br><br>
+            <div style="background:#120e20; border-radius:6px; padding:7px 10px; margin-bottom:6px;">
+              <span style="color:#4ade80; font-weight:700;">2–3개</span> &rarr; <code style="color:#4ade80;">TOOL_RAG</code> (multi-RAG 합산)<br>
+              <span style="color:#aaa; font-size:0.73rem;">각 sub_label별로 RAG 검색 후 context 합산<br>
+              min(score) &lt; 0.65 이면 HUMAN_REVIEW 다운그레이드<br>
+              예) ['SUBMISSION_POLICY', 'COURSE_INFO'] → 각각 검색 후 합쳐서 답변</span>
+            </div>
+            <div style="background:#120e20; border-radius:6px; padding:7px 10px;">
+              <span style="color:#f0c040; font-weight:700;">4개 이상</span> &rarr; <code style="color:#f0c040;">HUMAN_REVIEW</code><br>
+              <span style="color:#aaa; font-size:0.73rem;">복잡도 초과 → 운영자 검토</span>
+            </div>
           </div>
         </div>
       </div>
