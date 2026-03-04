@@ -106,7 +106,7 @@ def compare_one(agent: InquiryAgent, case: dict, idx: int):
     # ── 답변 생성 (두 모드 각각) ─────────────────────────────────
     from inquiry_agent import RAG_CONFIDENCE_THRESHOLD, Strategy as St
 
-    base_strategy, should_respond = agent._determine_strategy(label, conf)
+    base_strategy, should_respond = agent._determine_strategy(label, conf, clf)
 
     if not should_respond:
         print("\n  → NO_RESPONSE: 두 모드 모두 답변 생성 안 함")

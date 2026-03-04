@@ -44,11 +44,16 @@
     │  ↑ prior_knowledge (플랫폼 사전 지식) 주입
     │  ↑ 라벨별 설명 + 실제 예시 제목 주입 (knowledge_base.json)
     │
-    │  label      → 10개 카테고리 중 하나
-    │  confidence → very_high / high / medium / low
+    │  label       → 10개 카테고리 중 하나 (복합 시 우선순위 높은 라벨)
+    │  confidence  → very_high / high / medium / low
+    │  is_compound → 성격이 다른 질문이 2개 이상 포함 여부
+    │  sub_labels  → 감지된 모든 라벨 목록
     │
     ▼
 [Step 2] 코드가 strategy 결정
+    │
+    ├─ [복합 문의] is_compound=true AND sub_labels 中 Group1 라벨 포함
+    │      → human_review  (RAG로 답변 가능한 부분 초안 + 운영자가 나머지 처리)
     │
     ├─ Group 1 라벨 OR confidence == low
     │      → no_response   (운영자 에스컬레이션, 답변 생성 없음)
@@ -140,6 +145,7 @@
 **코드가 결정하는 것 (3가지)**
 ```python
 # Step 2: 기본 strategy 결정
+is_compound AND any(sub_label in GROUP1)  → should_respond=True,  strategy='human_review'  # 복합 문의 우선
 label in Group1 OR confidence == 'low'   → should_respond=False, strategy='no_response'
 confidence == 'medium'                   → should_respond=True,  strategy='human_review'
 confidence == 'very_high' / 'high'       → should_respond=True,  strategy='tool_rag'

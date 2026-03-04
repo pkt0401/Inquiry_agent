@@ -24,11 +24,13 @@ import numpy as np
 import faiss
 from html.parser import HTMLParser
 from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from openai import OpenAI
+from dotenv import load_dotenv
+load_dotenv()
 
-
+api_key = os.getenv("API_KEY")
 # ──────────────────────────────────────────────────────────────────
 # HTML 전처리
 # ──────────────────────────────────────────────────────────────────
@@ -133,6 +135,8 @@ class LLMClassification:
     label: InquiryLabel
     confidence_level: ConfidenceLevel
     rationale: str
+    is_compound: bool = False
+    sub_labels: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -143,6 +147,8 @@ class AgentResponse:
     confidence_level: ConfidenceLevel
     answer: Optional[str]
     reasoning: str
+    is_compound: bool = False
+    sub_labels: List[str] = field(default_factory=list)
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -429,11 +435,20 @@ class InquiryAgent:
 - medium    : ①② 충족, ③ 불확실
 - low       : ① 또는 ② 미충족
 
+## 복합 문의 감지
+문의 내에 성격이 서로 다른 카테고리의 질문이 2개 이상 포함된 경우:
+- is_compound = true 로 설정
+- sub_labels 에 감지된 모든 라벨을 나열
+- label 은 sub_labels 중 가장 우선순위가 높은 라벨로 설정 (Group1 라벨 우선)
+예: Q1=COURSE_INFO, Q2=ACCOUNT_ACTION_REQUIRED → label="ACCOUNT_ACTION_REQUIRED", is_compound=true, sub_labels=["COURSE_INFO","ACCOUNT_ACTION_REQUIRED"]
+
 ## 출력 형식 (JSON만 출력, 다른 텍스트 없이)
 {{
   "label": "LABEL_NAME",
   "confidence_level": "very_high" | "high" | "medium" | "low",
-  "rationale": "분류 근거 한 줄"
+  "rationale": "분류 근거 한 줄",
+  "is_compound": false,
+  "sub_labels": []
 }}"""
 
         user_content = f"제목: {title}\n내용: {content}"
@@ -453,10 +468,14 @@ class InquiryAgent:
 
             label      = InquiryLabel(result.get("label", "UNCATEGORIZED"))
             confidence = ConfidenceLevel(result.get("confidence_level", "low"))
+            is_compound = bool(result.get("is_compound", False))
+            sub_labels  = result.get("sub_labels", [])
             return LLMClassification(
                 label=label,
                 confidence_level=confidence,
                 rationale=result.get("rationale", ""),
+                is_compound=is_compound,
+                sub_labels=sub_labels,
             )
 
         except Exception as e:
@@ -469,8 +488,16 @@ class InquiryAgent:
     # ── Step 2: Strategy 결정 ─────────────────────────────────────
 
     def _determine_strategy(
-        self, label: InquiryLabel, confidence: ConfidenceLevel
+        self, label: InquiryLabel, confidence: ConfidenceLevel,
+        classification: 'LLMClassification' = None,
     ) -> Tuple[Strategy, bool]:
+        # 복합 문의: sub_labels 중 Group1 라벨이 포함되면 → HUMAN_REVIEW (답변 초안 + 운영자 검토)
+        if classification and classification.is_compound and classification.sub_labels:
+            valid_sub = [InquiryLabel(sl) for sl in classification.sub_labels
+                         if sl in {l.value for l in InquiryLabel}]
+            if any(sl in GROUP1 for sl in valid_sub):
+                return Strategy.HUMAN_REVIEW, True
+
         if label in GROUP1 or confidence == ConfidenceLevel.LOW:
             return Strategy.NO_RESPONSE, False
         if confidence == ConfidenceLevel.MEDIUM:
@@ -606,7 +633,7 @@ class InquiryAgent:
 
         # Step 2: Strategy 결정
         strategy, should_respond = self._determine_strategy(
-            classification.label, classification.confidence_level
+            classification.label, classification.confidence_level, classification
         )
 
         if not should_respond:
@@ -617,6 +644,8 @@ class InquiryAgent:
                 confidence_level=classification.confidence_level,
                 answer=None,
                 reasoning=classification.rationale,
+                is_compound=classification.is_compound,
+                sub_labels=classification.sub_labels,
             )
 
         # RAG 검색
@@ -652,6 +681,8 @@ class InquiryAgent:
             confidence_level=classification.confidence_level,
             answer=answer,
             reasoning=classification.rationale,
+            is_compound=classification.is_compound,
+            sub_labels=classification.sub_labels,
         )
 
     # ── history 로드 (train + test 모두 지원) ─────────────────────
@@ -880,6 +911,8 @@ def main():
         print(f"[Label]       {response.label.value}")
         print(f"[신뢰도]      {response.confidence_level.value}")
         print(f"[Strategy]    {strategy_labels[response.strategy]}")
+        if response.is_compound:
+            print(f"[복합 문의]   sub_labels={response.sub_labels}")
         print(f"[판단 근거]   {response.reasoning}")
 
         if response.answer:

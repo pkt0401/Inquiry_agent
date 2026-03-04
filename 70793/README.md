@@ -81,13 +81,16 @@ python inquiry_agent.py
 ```
 문의 입력
   ↓
-[Step 1] LLM 분류  →  label(10개) + confidence_level(4단계)
+[Step 1] LLM 분류  →  label(10개) + confidence_level(4단계) + is_compound + sub_labels
           ↑ prior_knowledge + 라벨별 설명·예시 (knowledge_base.json) 주입
   ↓
 [Step 2] 코드가 strategy 결정
+  ├─ 복합 문의 (is_compound) + sub_labels 中 Group1 포함
+  │      →  human_review  (RAG 초안 + 운영자가 나머지 처리)
   ├─ Group 1 라벨 OR confidence == low    →  no_response   (운영자 에스컬레이션)
   ├─ confidence == medium                 →  human_review  (RAG 초안 + 운영자 검토)
   └─ confidence == high / very_high       →  tool_rag      (RAG 자동 답변 게시)
+                                               └─ RAG score < 0.65 → human_review 다운그레이드
   ↓
 [Step 3] Label-aware RAG (tool_rag / human_review)
   ① FAISS 벡터 검색 (OpenAI text-embedding-3-small) — 동일 label 우선, cosine 유사도 top-3
