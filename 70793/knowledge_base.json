@@ -8,14 +8,16 @@
         "level": "LV1",
         "name": "AI Literacy",
         "description": "AI 기초 개념부터 실습까지 입문자를 위한 과정. 수료 시 인증 자격 부여.",
+        "enrollment": "상시 오픈. 별도 기수 없이 언제든지 수강 신청 및 수강 가능.",
         "certification": "인증 버튼은 인증 시험 응시 대상자에게만, 응시 기간 내에 활성화됨.",
-        "keywords": ["ai literacy", "리터러시", "인증", "lv1"]
+        "keywords": ["ai literacy", "리터러시", "인증", "lv1", "상시", "상시오픈"]
       },
       {
         "id": "ai-bootcamp",
         "level": "LV2",
         "name": "AI Bootcamp",
         "description": "LLM 기반 서비스 개발 전문 과정. 총 6개 모듈 수강 완료 후 최종과제 제출.",
+        "enrollment": "기수제 운영. 기수별로 모집·수강 기간이 정해져 있으며, 해당 기간에만 수강 및 과제 제출 가능.",
         "modules": [
           "LLM Fundamentals",
           "Prompt Engineering",
@@ -31,7 +33,7 @@
           "evaluation": "과제 제출 마감 후 약 2주 뒤 결과 발표. 이메일 및 Slack 채널로 안내.",
           "note": "AI Bootcamp 수료 시 AI Literacy도 수료 처리됨 (A등급 인정)."
         },
-        "keywords": ["bootcamp", "부트캠프", "llm", "rag", "langchain", "azure", "최종과제", "lv2"]
+        "keywords": ["bootcamp", "부트캠프", "llm", "rag", "langchain", "azure", "최종과제", "lv2", "기수", "기수제"]
       },
       {
         "id": "ai-master-project",
@@ -56,7 +58,8 @@
       "플랫폼 IDE 내에서 직접 가상환경 생성 시 속도 저하·로딩 문제가 발생할 수 있어 비권장.",
       "실습 파일(주피터 노트북)은 다운로드 제공 안 함. 웹 환경 내에서만 실습.",
       "Azure OpenAI 사용 시 AZURE_OPENAI_API_KEY 또는 AZURE_OPENAI_AD_TOKEN 환경변수 설정 필요.",
-      "웹 IDE 개발환경에서는 SKT망 등 외부망에서도 API 사용 및 개발 가능. 단, 로컬 환경 개발 시 사내망 외에서 제공 API Key 사용 및 비용 지원은 불가."
+      "웹 IDE 개발환경에서는 SKT망 등 외부망에서도 API 사용 및 개발 가능. 단, 로컬 환경 개발 시 사내망 외에서 제공 API Key 사용 및 비용 지원은 불가.",
+      "AI Literacy는 상시 오픈 과정으로 기수 구분 없이 언제든 수강 가능. AI Bootcamp는 기수제로 운영되어 기수별 모집·수강 기간이 정해져 있으며, 해당 기간에만 수강 및 과제 제출 가능."
     ]
   },
 

@@ -491,11 +491,13 @@ class InquiryAgent:
         self, label: InquiryLabel, confidence: ConfidenceLevel,
         classification: 'LLMClassification' = None,
     ) -> Tuple[Strategy, bool]:
-        # 복합 문의: sub_labels 중 Group1 라벨이 포함되면 → HUMAN_REVIEW (답변 초안 + 운영자 검토)
-        if classification and classification.is_compound and classification.sub_labels:
+        # 복합 문의: sub_labels 가 2개 이상 다른 카테고리에 걸치면 → HUMAN_REVIEW
+        # - Group1 포함 시: 운영자 직접 조치 필요 항목이 있으므로 반드시 검토
+        # - Group2만 있어도: RAG는 label 하나 기준으로만 검색하여 나머지 질문은 답변 누락될 수 있음
+        if classification and classification.is_compound and len(classification.sub_labels) >= 2:
             valid_sub = [InquiryLabel(sl) for sl in classification.sub_labels
                          if sl in {l.value for l in InquiryLabel}]
-            if any(sl in GROUP1 for sl in valid_sub):
+            if len(set(valid_sub)) >= 2:
                 return Strategy.HUMAN_REVIEW, True
 
         if label in GROUP1 or confidence == ConfidenceLevel.LOW:
@@ -894,6 +896,8 @@ def main():
     }
 
     for i, test_inquiry in enumerate(test_cases, 1):
+        if i == 6:
+            break
         title   = test_inquiry.get('title', '')
         content = agent._strip_html(test_inquiry.get('content', ''))
         content_preview = content[:200].replace('\n', ' ').strip()
