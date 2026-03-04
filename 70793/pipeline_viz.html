@@ -291,51 +291,8 @@
       </div>
     </div>
 
-    <!-- 신뢰도 테이블 -->
-    <div style="margin-top:16px;">
-      <div style="font-size:0.75rem; color:#7a9adf; font-weight:600; margin-bottom:6px;">신뢰도 판단 기준</div>
-      <table class="conf-table">
-        <thead>
-          <tr>
-            <th>레벨</th>
-            <th>충족 조건</th>
-            <th>① 명확성</th>
-            <th>② 단일성</th>
-            <th>③ Agent처리</th>
-            <th>④ 정보충분</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><span class="level-pill lp-vh">very_high</span></td>
-            <td>①②③④ 모두</td>
-            <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-            <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-          </tr>
-          <tr>
-            <td><span class="level-pill lp-hi">high</span></td>
-            <td>①②③, ④ 일부 부족</td>
-            <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-            <td style="text-align:center;">✅</td><td style="text-align:center;">⚠️</td>
-          </tr>
-          <tr>
-            <td><span class="level-pill lp-me">medium</span></td>
-            <td>①②, ③ 불확실</td>
-            <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-            <td style="text-align:center;">❓</td><td style="text-align:center;">—</td>
-          </tr>
-          <tr>
-            <td><span class="level-pill lp-lo">low</span></td>
-            <td>① 또는 ② 미충족</td>
-            <td style="text-align:center;">❌</td><td style="text-align:center;">—</td>
-            <td style="text-align:center;">—</td><td style="text-align:center;">—</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
     <!-- 라벨 그룹 -->
-    <div style="margin-top:14px;">
+    <div style="margin-top:16px;">
       <div style="font-size:0.75rem; color:#7a9adf; font-weight:600; margin-bottom:6px;">카테고리 10개 (label)</div>
       <div class="label-grid">
         <div class="label-group lg-red">
@@ -356,6 +313,70 @@
         </div>
       </div>
     </div>
+
+    <!-- 신뢰도 테이블 -->
+    <div style="margin-top:16px;">
+      <div style="font-size:0.75rem; color:#7a9adf; font-weight:600; margin-bottom:6px;">신뢰도 판단 기준 (confidence_level)</div>
+
+      <!-- 기준 설명 -->
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px;">
+        <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
+          <span style="color:#9fb8f5; font-weight:700;">① 명확성</span><br>
+          <span style="color:#aaa;">문의 목적이 뚜렷하고 내용이 구체적인가</span>
+        </div>
+        <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
+          <span style="color:#9fb8f5; font-weight:700;">② 단일성</span><br>
+          <span style="color:#aaa;">하나의 카테고리로 명확히 분류 가능한가 (UNCATEGORIZED 아님)</span>
+        </div>
+        <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
+          <span style="color:#9fb8f5; font-weight:700;">③ Agent처리가능성</span><br>
+          <span style="color:#aaa;">RAG·KB로 Agent가 처리 가능한 영역인가 (Group 2 라벨)</span>
+        </div>
+        <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
+          <span style="color:#9fb8f5; font-weight:700;">④ 정보충분성</span><br>
+          <span style="color:#aaa;">RAG 검색·답변 생성에 충분한 맥락 정보가 포함되어 있는가</span>
+        </div>
+      </div>
+
+      <table class="conf-table">
+        <thead>
+          <tr>
+            <th>레벨</th>
+            <th>충족 조건</th>
+            <th>① 명확성</th>
+            <th>② 단일성</th>
+            <th>③ Agent처리</th>
+            <th>④ 정보충분</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="level-pill lp-vh">very_high</span></td>
+            <td>①②③④ 모두 충족</td>
+            <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
+            <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
+          </tr>
+          <tr>
+            <td><span class="level-pill lp-hi">high</span></td>
+            <td>①②③ 충족, ④ 일부 부족</td>
+            <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
+            <td style="text-align:center;">✅</td><td style="text-align:center;">⚠️</td>
+          </tr>
+          <tr>
+            <td><span class="level-pill lp-me">medium</span></td>
+            <td>①② 충족, ③ 불확실</td>
+            <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
+            <td style="text-align:center;">❓</td><td style="text-align:center;">—</td>
+          </tr>
+          <tr>
+            <td><span class="level-pill lp-lo">low</span></td>
+            <td>① 또는 ② 미충족</td>
+            <td style="text-align:center;">❌</td><td style="text-align:center;">—</td>
+            <td style="text-align:center;">—</td><td style="text-align:center;">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div class="arrow"></div>
@@ -367,36 +388,6 @@
     <div class="box-body" style="margin-bottom:12px;">우선순위 순서로 평가 (위에서 아래로)</div>
 
     <div class="strategy-grid">
-
-      <!-- 복합 문의 -->
-      <div class="strategy-card s-compound" style="grid-column: 1 / -1;">
-        <div style="margin-bottom:10px;">
-          <span class="badge badge-purple">★ 복합 문의 (신규)</span>&nbsp;
-          <span style="font-size:1.05rem; font-weight:700; color:#c39bd3;">→ HUMAN_REVIEW</span>
-          <span style="color:#aaa; font-size:0.75rem; margin-left:8px;">RAG 초안 + 운영자 검토</span>
-        </div>
-        <div style="font-size:0.77rem; color:#aaa; margin-bottom:10px;">
-          조건: <code>is_compound == true</code> AND <code>len(set(sub_labels)) &ge; 2</code> (유효한 라벨 기준)
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <!-- Case A -->
-          <div style="background:#1f0f2e; border:1px solid #8e44ad; border-radius:8px; padding:10px 13px; font-size:0.78rem; line-height:1.55;">
-            <div style="font-weight:700; color:#c39bd3; margin-bottom:5px;">Case A &mdash; Group1 포함</div>
-            <code>sub_labels</code> 中 Group1 라벨 존재<br>
-            <span style="color:#9b8aaa;">→ 운영자 직접 조치가 필요한 항목이 포함되어 있어 반드시 검토 필요</span><br><br>
-            <span style="color:#c39bd3; font-size:0.74rem;">예) sub_labels=['COURSE_INFO', 'ACCOUNT_ACTION_REQUIRED']<br>
-            Q1=수강 조건 (RAG 가능) + Q2=수강 기록 초기화 (운영자 처리)</span>
-          </div>
-          <!-- Case B -->
-          <div style="background:#1a1330; border:1px solid #6c3483; border-radius:8px; padding:10px 13px; font-size:0.78rem; line-height:1.55;">
-            <div style="font-weight:700; color:#a078c8; margin-bottom:5px;">Case B &mdash; Group2만 포함</div>
-            <code>sub_labels</code> 모두 Group2 라벨이지만 2가지 이상<br>
-            <span style="color:#8a7aaa;">→ RAG는 대표 label 1개 기준으로만 검색하여 나머지 질문은 답변 누락 위험</span><br><br>
-            <span style="color:#a078c8; font-size:0.74rem;">예) sub_labels=['SUBMISSION_POLICY', 'COURSE_INFO']<br>
-            Q1=과제 제출 정책 + Q2=커리큘럼 일정 → 둘 다 RAG 가능하나 검색 누락 방지</span>
-          </div>
-        </div>
-      </div>
 
       <!-- NO_RESPONSE -->
       <div class="strategy-card s-red">
@@ -431,6 +422,36 @@
           AND <code>confidence == high</code><br>
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <code>very_high</code><br>
           AND RAG score &ge; <strong>0.65</strong>
+        </div>
+      </div>
+
+      <!-- 복합 문의 -->
+      <div class="strategy-card s-compound" style="grid-column: 1 / -1;">
+        <div style="margin-bottom:10px;">
+          <span class="badge badge-purple">★ 복합 문의</span>&nbsp;
+          <span style="font-size:1.05rem; font-weight:700; color:#c39bd3;">→ HUMAN_REVIEW</span>
+          <span style="color:#aaa; font-size:0.75rem; margin-left:8px;">RAG 초안 + 운영자 검토</span>
+        </div>
+        <div style="font-size:0.77rem; color:#aaa; margin-bottom:10px;">
+          조건: <code>is_compound == true</code> AND <code>len(set(sub_labels)) &ge; 2</code> (유효한 라벨 기준)
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <!-- Case A -->
+          <div style="background:#1f0f2e; border:1px solid #8e44ad; border-radius:8px; padding:10px 13px; font-size:0.78rem; line-height:1.55;">
+            <div style="font-weight:700; color:#c39bd3; margin-bottom:5px;">Case A &mdash; Group1 포함</div>
+            <code>sub_labels</code> 中 Group1 라벨 존재<br>
+            <span style="color:#9b8aaa;">→ 운영자 직접 조치가 필요한 항목이 포함되어 있어 반드시 검토 필요</span><br><br>
+            <span style="color:#c39bd3; font-size:0.74rem;">예) sub_labels=['COURSE_INFO', 'ACCOUNT_ACTION_REQUIRED']<br>
+            Q1=수강 조건 (RAG 가능) + Q2=수강 기록 초기화 (운영자 처리)</span>
+          </div>
+          <!-- Case B -->
+          <div style="background:#1a1330; border:1px solid #6c3483; border-radius:8px; padding:10px 13px; font-size:0.78rem; line-height:1.55;">
+            <div style="font-weight:700; color:#a078c8; margin-bottom:5px;">Case B &mdash; Group2만 포함</div>
+            <code>sub_labels</code> 모두 Group2 라벨이지만 2가지 이상<br>
+            <span style="color:#8a7aaa;">→ RAG는 대표 label 1개 기준으로만 검색하여 나머지 질문은 답변 누락 위험</span><br><br>
+            <span style="color:#a078c8; font-size:0.74rem;">예) sub_labels=['SUBMISSION_POLICY', 'COURSE_INFO']<br>
+            Q1=과제 제출 정책 + Q2=커리큘럼 일정 → 둘 다 RAG 가능하나 검색 누락 방지</span>
+          </div>
         </div>
       </div>
 
