@@ -81,16 +81,25 @@ python inquiry_agent.py
 ```
 문의 입력
   ↓
-[Step 1] LLM 분류  →  label(10개) + confidence_level(4단계)
+[Step 1] LLM 분류  →  label(10개) + confidence_level(4단계) + is_compound + sub_labels
           ↑ prior_knowledge + 라벨별 설명·예시 (knowledge_base.json) 주입
   ↓
 [Step 2] 코드가 strategy 결정
+  ├─ 복합 문의 (is_compound) + sub_labels 中 Group1 포함
+  │      →  human_review  (RAG 초안 + 운영자가 나머지 처리)
+  ├─ 복합 문의 (is_compound) + sub_labels 全 Group2 + 2–3개
+  │      →  tool_rag  (sub_label 각각 RAG 후 context 합산 → 통합 답변)
+  │           └─ min(RAG score) < 0.65 → human_review 다운그레이드
+  ├─ 복합 문의 (is_compound) + sub_labels 全 Group2 + 4개 이상
+  │      →  human_review  (복잡도 초과, 운영자 검토)
   ├─ Group 1 라벨 OR confidence == low    →  no_response   (운영자 에스컬레이션)
   ├─ confidence == medium                 →  human_review  (RAG 초안 + 운영자 검토)
   └─ confidence == high / very_high       →  tool_rag      (RAG 자동 답변 게시)
+                                               └─ RAG score < 0.65 → human_review 다운그레이드
   ↓
 [Step 3] Label-aware RAG (tool_rag / human_review)
   ① FAISS 벡터 검색 (OpenAI text-embedding-3-small) — 동일 label 우선, cosine 유사도 top-3
+     ※ 복합 문의 Group2 2-3개: sub_label별 각각 검색 후 context 합산, min(score)로 다운그레이드 판단
   ② 에러 솔루션 정규식 보완 (CODE_LOGIC_ERROR 또는 에러 키워드 감지 시)
   ③ 과정 정보 보완 (COURSE_INFO)
   ※ embeddings_cache.pkl 에 임베딩 결과 캐시 → 재실행 시 API 미호출

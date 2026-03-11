@@ -44,11 +44,23 @@
     │  ↑ prior_knowledge (플랫폼 사전 지식) 주입
     │  ↑ 라벨별 설명 + 실제 예시 제목 주입 (knowledge_base.json)
     │
-    │  label      → 10개 카테고리 중 하나
-    │  confidence → very_high / high / medium / low
+    │  label       → 10개 카테고리 중 하나 (복합 시 우선순위 높은 라벨)
+    │  confidence  → very_high / high / medium / low
+    │  is_compound → 성격이 다른 질문이 2개 이상 포함 여부
+    │  sub_labels  → 감지된 모든 라벨 목록
     │
     ▼
 [Step 2] 코드가 strategy 결정
+    │
+    ├─ [복합 문의] is_compound=true AND sub_labels 中 Group1 라벨 포함
+    │      → human_review  (RAG로 답변 가능한 부분 초안 + 운영자가 나머지 처리)
+    │
+    ├─ [복합 문의] is_compound=true AND sub_labels 全 Group2 AND 2–3개
+    │      → tool_rag  (sub_label 각각 RAG 검색 후 context 합산 → 통합 답변 생성)
+    │           └─ min(RAG score) < 0.65 → human_review 다운그레이드
+    │
+    ├─ [복합 문의] is_compound=true AND sub_labels 全 Group2 AND 4개 이상
+    │      → human_review  (복잡도 초과, 운영자 검토)
     │
     ├─ Group 1 라벨 OR confidence == low
     │      → no_response   (운영자 에스컬레이션, 답변 생성 없음)
@@ -133,19 +145,29 @@
 
 ## 5. LLM vs 코드 역할 분리
 
-**LLM이 판단하는 것 (2가지)**
-- `label` → 10개 카테고리 중 하나
+**LLM이 판단하는 것 (4가지)**
+- `label` → 10개 카테고리 중 하나 (복합 시 우선순위 높은 라벨)
 - `confidence_level` → very_high / high / medium / low
+- `is_compound` → 성격이 다른 질문이 2개 이상 포함 여부
+- `sub_labels` → 감지된 모든 라벨 목록
 
-**코드가 결정하는 것 (3가지)**
+**코드가 결정하는 것**
 ```python
-# Step 2: 기본 strategy 결정
-label in Group1 OR confidence == 'low'   → should_respond=False, strategy='no_response'
-confidence == 'medium'                   → should_respond=True,  strategy='human_review'
-confidence == 'very_high' / 'high'       → should_respond=True,  strategy='tool_rag'
+# Step 2: 기본 strategy 결정 (우선순위 순)
+is_compound AND any(sub_label in GROUP1)                    → human_review   # Group1 포함 복합: 운영자 처리 필요
+is_compound AND all(sub_label in GROUP2) AND 2<=count<=3   → tool_rag       # Group2 복합 2-3개: multi-RAG 합산
+is_compound AND all(sub_label in GROUP2) AND count >= 4    → human_review   # Group2 복합 4개+: 복잡도 초과
+label in Group1 OR confidence == 'low'                     → no_response    # 운영자 에스컬레이션
+confidence == 'medium'                                     → human_review   # RAG 초안 + 운영자 검토
+confidence == 'very_high' / 'high'                         → tool_rag       # RAG 자동 답변
 
-# Step 3: RAG 유사도 기반 다운그레이드 (tool_rag만 해당)
-strategy == 'tool_rag' AND max_rag_score < 0.65
+# Step 3: RAG 검색 (복합 Group2 2-3개는 sub_label별 각각 검색 후 합산)
+# 단일 문의:   kb_context, score = _build_kb_context(label, text)
+# 복합 G2 문의: ctx_list = [_build_kb_context(lbl, text) for lbl in sub_labels]
+#               kb_context = join(ctx_list),  score = min(scores)
+
+# RAG 유사도 기반 다운그레이드 (tool_rag만 해당)
+strategy == 'tool_rag' AND score < 0.65
     → strategy='human_review'  (RAG 예시 품질 부족 → 운영자 검토 필요)
 
 # 답변 초안 여부: confidence가 아닌 최종 strategy 기준
@@ -162,8 +184,8 @@ is_draft = (strategy == 'human_review')  # [초안] 태그 부착 여부
 
 | 항목 | 내용 |
 |------|------|
-| 플랫폼 소개 | AI Talent Lab: LG그룹 임직원 대상 AI 교육 플랫폼 |
-| 과정 구성 | AI Literacy (LV1) / AI Bootcamp (LV2, 6개 모듈) / AI Master Project (LV3) |
+| 플랫폼 소개 | AI Talent Lab: SK AX그룹 임직원 대상 AI 교육 플랫폼 |
+| 과정 구성 | AI Literacy (LV1, **상시 오픈**) / AI Bootcamp (LV2, 6개 모듈, **기수제 운영**) / AI Master Project (LV3) |
 | 최종과제 규정 | 강의 6개 완료 후 시작, 기획서+소스코드 각각 여러 번 제출 가능 |
 | 인증 버튼 | 응시 대상자 + 응시 기간 중에만 활성화 → 비활성이 정상인 경우 있음 |
 | IDE 정책 | 웹 기반 IDE 제공, 직접 venv 생성 비권장 (속도 저하·로딩 문제) |
