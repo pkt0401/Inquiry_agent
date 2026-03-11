@@ -37,19 +37,8 @@ def load_agent() -> InquiryAgent:
         sys.exit(1)
 
     agent = InquiryAgent(api_key=api_key)
-    inquiry_data = load_json_file(os.path.join(BASE, "inquiry.json"))
-    comment_data = load_json_file(os.path.join(BASE, "inquiry_comment.json"))
-
-    test_inq_path = os.path.join(BASE, "inquiry_test.json")
-    test_cmt_path = os.path.join(BASE, "inquiry_comment_test.json")
-    if os.path.exists(test_inq_path):
-        test_inquiry_data = load_json_file(test_inq_path)
-        test_comment_data = load_json_file(test_cmt_path) if os.path.exists(test_cmt_path) else []
-        all_inquiries = inquiry_data + test_inquiry_data
-        all_comments  = comment_data + test_comment_data
-    else:
-        all_inquiries = inquiry_data
-        all_comments  = comment_data
+    all_inquiries = load_json_file(os.path.join(BASE, "inquiry_all.json"))
+    all_comments  = load_json_file(os.path.join(BASE, "inquiry_comment_all.json"))
 
     agent.load_inquiry_history(all_inquiries, all_comments, pre_label=True)
     return agent

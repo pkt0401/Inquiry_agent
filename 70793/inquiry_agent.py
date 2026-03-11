@@ -11,7 +11,7 @@ AI Talent Lab 문의하기 Agent PoC
 
 RAG:
   - knowledge_base.json 에서 해당 label의 큐레이션 예제 우선 검색
-  - 그 외 train history(inquiry.json + inquiry_comment.json)에서 유사 Q&A 보조 검색
+  - 그 외 history(inquiry_all.json + inquiry_comment_all.json)에서 유사 Q&A 보조 검색
   - 사전 지식 (prior_knowledge) 은 분류·답변 양쪽 프롬프트에 주입
 """
 
@@ -831,30 +831,17 @@ def main():
 
     base_path = os.path.dirname(os.path.abspath(__file__))
 
-    # Train 데이터 로드
-    inquiry_data = load_json_file(os.path.join(base_path, 'inquiry.json'))
-    comment_data = load_json_file(os.path.join(base_path, 'inquiry_comment.json'))
-    print(f"Train 문의 데이터: {len(inquiry_data)}건")
-
-    # Test 데이터 로드 (있으면)
-    test_inq_path = os.path.join(base_path, 'inquiry_test.json')
-    test_cmt_path = os.path.join(base_path, 'inquiry_comment_test.json')
-    if os.path.exists(test_inq_path):
-        test_inquiry_data = load_json_file(test_inq_path)
-        test_comment_data = load_json_file(test_cmt_path) if os.path.exists(test_cmt_path) else []
-        print(f"Test 문의 데이터: {len(test_inquiry_data)}건")
-        all_inquiries = inquiry_data + test_inquiry_data
-        all_comments  = comment_data + test_comment_data
-    else:
-        all_inquiries = inquiry_data
-        all_comments  = comment_data
+    # 통합 데이터 로드 (inquiry_all.json = inquiry.json + inquiry_test.json 중복제거 후 정렬)
+    all_inquiries = load_json_file(os.path.join(base_path, 'inquiry_all.json'))
+    all_comments  = load_json_file(os.path.join(base_path, 'inquiry_comment_all.json'))
+    print(f"통합 문의 데이터: {len(all_inquiries)}건 / 댓글: {len(all_comments)}건")
 
     agent.load_inquiry_history(all_inquiries, all_comments, pre_label=True)
     print(f"총 history 로드: {len(agent.inquiry_history)}건 (라벨 사전 부여 완료)\n")
     print("Agent 준비 완료\n")
 
     # 테스트 케이스
-    test_cases = load_json_file(os.path.join(base_path, 'test.json'))
+    test_cases = load_json_file(os.path.join(base_path, 'test2.json'))
 
     strategy_labels = {
         Strategy.NO_RESPONSE:  "운영자 에스컬레이션",
