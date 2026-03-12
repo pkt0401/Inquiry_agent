@@ -1,0 +1,57 @@
+{
+  "_comment": "이 파일은 기수별 일정 등 주기적으로 바뀌는 동적 정보를 관리합니다. 기수 변경 시 이 파일만 수정하세요.",
+  "bootcamp": {
+    "current_cohort": "12기",
+    "cohort_cycle_weeks": 4,
+    "enrollment_period": {
+      "start": "",
+      "end": "",
+      "note": "모집 기간 외에는 수강 신청 불가"
+    },
+    "course_period": {
+      "start": "2026-02-23",
+      "end": "2026-03-20",
+      "note": "해당 기간에만 강의 수강 및 과제 제출 가능"
+    },
+    "assignment_deadline": "2026-03-20",
+    "result_announcement": "2026-04-03",
+    "notice": "",
+    "upcoming_cohorts": [
+      {
+        "cohort": "3차",
+        "enrollment_period": { "start": "2026-01-23", "end": "2026-03-21" },
+        "course_period": { "start": "2026-03-23", "end": "2026-04-17" },
+        "status": "대기접수중 (정원 마감 372/372)"
+      },
+      {
+        "cohort": "4차",
+        "enrollment_period": { "start": "2026-01-23", "end": "2026-04-18" },
+        "course_period": { "start": "2026-04-20", "end": "2026-05-15" },
+        "status": "접수중"
+      }
+    ]
+  },
+  "literacy": {
+    "course_period": { "start": "2026-01-01", "end": "2026-12-31", "note": "상시 운영" },
+    "certification_exam": {
+      "current_round": "7차",
+      "exam_date": "2026-03-18",
+      "enrollment_period": { "start": "2026-01-23", "end": "2026-03-16" },
+      "status": "접수중",
+      "note": "온라인 응시. 오프라인 응시는 별도 요청 필요."
+    }
+  },
+  "master_project": {
+    "current_cohort": "",
+    "recruitment_period": {
+      "start": "",
+      "end": ""
+    },
+    "course_period": {
+      "start": "",
+      "end": ""
+    },
+    "notice": "현재 모집 공고 없음"
+  },
+  "global_notice": ""
+}

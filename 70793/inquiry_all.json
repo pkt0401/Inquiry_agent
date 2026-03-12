@@ -84,18 +84,6 @@
     "update_dt": "2025-12-19 02:21:02"
   },
   {
-    "id": 17,
-    "title": "[Bootcamp] 9기 최종과제 평가결과",
-    "content": "<p>안녕하세요.</p><p>AI Bootcamp 9기 평가 결과를 언제쯤 확인할 수 있는지 문의드립니다.</p>\n\n\n",
-    "author_id": 8048,
-    "file_ids": null,
-    "group_id": null,
-    "status": "closed",
-    "is_pinned": 0,
-    "create_dt": "2025-12-19 07:48:13",
-    "update_dt": "2025-12-19 08:13:10"
-  },
-  {
     "id": 18,
     "title": "AI Literacy의 인증 시작하기 버튼 비활성화",
     "content": "<p>AI Literacy의 인증 시작하기 버튼 비활성화되어 있습니다.</p><p><br></p>",
@@ -190,18 +178,6 @@
     "is_pinned": 0,
     "create_dt": "2026-01-02 07:35:08",
     "update_dt": "2026-01-02 08:36:08"
-  },
-  {
-    "id": 26,
-    "title": "과제 제출 완료 시점 문의",
-    "content": "<p>안녕하세요?&nbsp;</p><p>과제 제출 완료 시점도 1월 9일까지인가요?</p>",
-    "author_id": 2985,
-    "file_ids": null,
-    "group_id": null,
-    "status": "closed",
-    "is_pinned": 0,
-    "create_dt": "2026-01-02 08:41:36",
-    "update_dt": "2026-01-02 08:44:03"
   },
   {
     "id": 27,
@@ -540,18 +516,6 @@
     "update_dt": "2026-01-16 04:58:58"
   },
   {
-    "id": 54,
-    "title": "Bootcamp 이수 문의",
-    "content": "<p>안녕하세요. 어제(1/19)부터 AI Bootcamp 과정을 진행 중입니다.</p><p>AI Bootcamp 이수 전에 AI Literacy 과정을 먼저 이수해야 한다고 하는데 현재 강의는 전체 수강했지만</p><p>AI Literacy 인증 시험 날짜가 2/25일로 AI Bootcamp 수료일 이후인데 이런 경우에는 어떻게 되는지 여쭙습니다.</p>",
-    "author_id": 4311,
-    "file_ids": null,
-    "group_id": null,
-    "status": "closed",
-    "is_pinned": 0,
-    "create_dt": "2026-01-19 23:33:13",
-    "update_dt": "2026-01-20 00:26:24"
-  },
-  {
     "id": 55,
     "title": "AI Master Project 이력 확인",
     "content": "<p>안녕하세요.</p><p><br></p><p>기존에 진행하던 페이지가 현재 접속되지 않는것으로 보여서요.</p><p>혹시 제가 참여했었던 AI Master Project의 최종 산출물 자료를 다시 받아 볼 수 있을지 문의 드립니다.</p><p><br></p><p>확인 부탁드리겠습니다.</p><p>감사합니다.</p>",
@@ -562,18 +526,6 @@
     "is_pinned": 0,
     "create_dt": "2026-01-20 04:06:39",
     "update_dt": "2026-01-20 04:20:21"
-  },
-  {
-    "id": 56,
-    "title": "SK AX 보안 점검 중입니다.",
-    "content": "<pre><code>SK AX 보안 점검 중입니다.\n\n문제 발생 시 연락 바랍니다.\n점검자 : 박연우\n연락처 : 01096279604</code></pre>",
-    "author_id": 7979,
-    "file_ids": "[9942]",
-    "group_id": null,
-    "status": "open",
-    "is_pinned": 0,
-    "create_dt": "2026-01-21 03:41:15",
-    "update_dt": "2026-01-27 05:21:58"
   },
   {
     "id": 57,
@@ -754,18 +706,6 @@
     "is_pinned": 0,
     "create_dt": "2026-01-29 17:00:08",
     "update_dt": "2026-01-29 20:55:33"
-  },
-  {
-    "id": 73,
-    "title": "[긴급] 미국법인 인증 시험 활성화 필요 (1/29 오후 4시)",
-    "content": "<p>미국법인 HR 담당자입니다.</p><p>시간차로 본사 담당자 연락이 닿지 않아 연락드립니다.</p><p>시험 시작 전 4분전인데 아직도 인증 시험이 활성화 되어 있지 않습니다.</p><p>오전까지는 분명 활성화 된것을 확인 했는데 없어졌네요.</p><p>바로 확인 부탁드립니다.</p>",
-    "author_id": 11204,
-    "file_ids": null,
-    "group_id": null,
-    "status": "closed",
-    "is_pinned": 0,
-    "create_dt": "2026-01-29 20:56:57",
-    "update_dt": "2026-01-29 21:01:47"
   },
   {
     "id": 74,
@@ -1080,18 +1020,6 @@
     "update_dt": "2026-02-13 16:21:00"
   },
   {
-    "id": 126,
-    "title": "제출기한",
-    "content": "<p>강의는 이수하였고 과제 준비 중인데 반드시 2월 13일까지 제출 해야 하나요?</p>",
-    "author_id": 20025,
-    "file_ids": "[]",
-    "group_id": null,
-    "status": "closed",
-    "is_pinned": 0,
-    "create_dt": "2026-02-13 22:15:00",
-    "update_dt": "2026-02-13 22:19:00"
-  },
-  {
     "id": 125,
     "title": "AI Bootcamp 중복 수강 관련 문의",
     "content": "<p>안녕하세요.</p><p>AI Bootcamp 수강과 관련하여 문의드립니다.</p><p>저는 AI Bootcamp 과정을 개별적으로 신청하여 ~2/13까지 수강 가능하도록 등록되어 있으며,</p><p>신입구성원 AI Bootcamp 과정으로는 ~2/28까지 수강이 가능하다고 안내받았습니다.</p><p>이 중 신입구성원 과정 기준(~2/28)으로 수강을 진행하려고 하였으나,</p><p>현재 시스템에서는 ~2/13까지의 개별 신청 수강 기간이 적용된 것으로 보이며 AI Bootcamp 버튼이 비활성화되어 강의에 접근이 어려운 상태입니다.</p><p>신입구성원 과정 기준으로 정상적으로 수강이 가능하도록 확인해주실 수 있을지 문의드립니다.</p><p>확인 부탁드리겠습니다. 감사합니다.</p>",
@@ -1102,18 +1030,6 @@
     "is_pinned": 0,
     "create_dt": "2026-02-19 14:14:00",
     "update_dt": "2026-02-20 13:41:00"
-  },
-  {
-    "id": 124,
-    "title": "2/19 작업으로 인해 Literacy 사전인증시험 진행 불가",
-    "content": "<p>2/19 작업 공지 메일은 확인하였습니다. 다만, 진행 중이던 사전인증시험은 진행이 불가한 상태가 되었고</p><p>횟수도 그냥 차감되었습니다.</p><p>차감된 1회 - 복구 가능여부 확인 부탁드립니다.</p>",
-    "author_id": 20023,
-    "file_ids": "[]",
-    "group_id": null,
-    "status": "closed",
-    "is_pinned": 0,
-    "create_dt": "2026-02-20 10:39:00",
-    "update_dt": "2026-02-20 13:42:00"
   },
   {
     "id": 123,
@@ -1354,5 +1270,57 @@
     "is_pinned": 0,
     "create_dt": "2026-02-27 14:53:00",
     "update_dt": "2026-02-27 14:53:00"
+  },
+  {
+    "id": 126,
+    "title": "Boot Camp 최종 과제 작성 환경 문의",
+    "content": "<p>안녕하세요.</p><p>하기와 같이 문의 사항이 있어 드리오니, 빠른 답변 부탁 드립니다.</p><p>1. 제가 알기로는, 최종 과제 작성 시 사내 Local PC 환경에서 구현하고 확인하고 해당 파일을 Upload하는 것으로 알고 있습니다.</p><p>&nbsp; &nbsp;제가 있는 위치는 수내오피스이고 SKT망을 사용하고 있습니다.</p><p>&nbsp; &nbsp;그런데, SKT망에서는 LLM(ChatGPT 등) 접속 및 사용에 대해 허가하지 않습니다.<br>&nbsp; &nbsp;(비업무사이트로 분류되어 예외신청해야 하나, 예외신청시 정책적으로 허용이 안되어 보안팀에서 반려하고 있습니다.)</p><p>&nbsp; &nbsp;이번 차수에 SKT 망 사용자가 꽤 있는 것으로 알고 있는데, <strong>어떻게 해야하는 지 혹은 다른 대안이 있는 지 문의 드립니다.<br></strong>&nbsp;</p><p>2.&nbsp;&nbsp;과제 소개에 따르면,&nbsp; &nbsp; &nbsp;&nbsp;<br><!--StartFragment-->&nbsp; &nbsp; &nbsp;\"개인 로컬에서 개발 가능하나, 제공되는 API Key는 <span style=\" font-style: normal\">SK AX 사내망에서만 사용 가능</span>합니다.\" 로 기재되어 있습니다.<br>&nbsp; &nbsp; &nbsp;위에도 말씀드렸다 시피, <strong>저는 SKT 망인데 사용 가능한 지 문의 드리며, 다른 방안이 있는 지도 알려주셨으면 합니다.</strong><br><br>이상입니다.<!--EndFragment--></p>",
+    "author_id": null,
+    "author_name": "미국 이란?",
+    "file_ids": "[]",
+    "group_id": null,
+    "status": "open",
+    "is_pinned": 0,
+    "create_dt": "2026-03-03 09:23:48",
+    "update_dt": "2026-03-03 09:34:18"
+  },
+  {
+    "id": 124,
+    "title": "과제 재 제출 가능 여부 문의",
+    "content": "<p>안녕하세요.</p><p><br></p><p>4강 과제, [과제] 나만의 RAG 만들기 를 진행하던 도중 실수로 업로드 전에 제출버튼을 눌렀습니다.</p><p>다시 올려서 제출해도 괜찮을까요?</p><p><br></p><p>감사합니다.</p>",
+    "author_id": null,
+    "author_name": "달돌",
+    "file_ids": "[]",
+    "group_id": null,
+    "status": "open",
+    "is_pinned": 0,
+    "create_dt": "2026-03-04 23:26:39",
+    "update_dt": "2026-03-05 00:16:52"
+  },
+  {
+    "id": 120,
+    "title": "웹 IDE 환경에서 화면으로 정상 구축 여부 확인하는 방법 문의 드립니다.",
+    "content": "<p>안녕하세요.</p><p>WEB IDE 환경에서 streamit을 실행 후 화면 상으로 어떻게 구현되어 있는지 확인하는 방법을 문의 드립니다.</p><pre><code>((venv) ) a00000@atl-dev:~/275$ streamlit run app/main.py\n\nCollecting usage statistics. To deactivate, set browser.gatherUsageStats to false.\n\n\n  You can now view your Streamlit app in your browser.\n\n  Local URL: http://localhost:8505\n  Network URL: http://10.244.5.210:8505\n  External URL: http://4.230.157.10:8505</code></pre><p><strong>1. 위의 3개 URL을 호출해도 \"이 페이지에 연결할 수 없습니다.\" 메세지가 나옵니다.</strong></p><p><strong>2. 참고로, 웹 IDE에서 실행 후 Streamlit을 실행하면 아래 URL 호출 후 화면상에 ERROR가 발생합니다.</strong></p><p>WEB URL: https://aitalentlab.skax.co.kr/streamlit/8637/ </p><p>ERROR: 502 Bad Gateway nginx</p><!--EndFragment-->\n\n<p><br></p>",
+    "author_id": null,
+    "author_name": "미국 이란?",
+    "file_ids": "[]",
+    "group_id": null,
+    "status": "open",
+    "is_pinned": 0,
+    "create_dt": "2026-03-06 11:50:43",
+    "update_dt": "2026-03-09 04:19:20"
+  },
+  {
+    "id": 119,
+    "title": "AI Bootcamp 이수 기준",
+    "content": "<p>안녕하세요.</p><p>AI Bootcamp 이수의 정량적 &amp; 정성적 명확한 기준 빠른 답변 부탁 드립니다.<br>(예를 들면, \"코드 리뷰 요청 멘토\" 최종 프로젝트 코드 리뷰에서 5가지 항목 중 3가지 항목 충족,&nbsp;&nbsp;상대/절대 평가 여부, 비율 및 기준 점수&nbsp;&nbsp;등)</p><p>평가 후 피드백에 대한 기준이&nbsp;아니고, 평가 전 이수 기준에 대한 답변 요청이며(이번 차수 이후 교육 재수강 여건이 허락하지 않습니다.),<br>아울러, 이수 결과가 인사 평가 등에 연계된다면 더욱 더 필요할 것으로 생각됩니다.&nbsp;<br>&nbsp;<br>아래와 같은 형태의 답변이라면 매우 혼란스러울 것 같습니다.</p><p><span style=\" font-style: normal\">AI: A부터 Z까지 매끄럽게 이어지면서, 사용자의 조작에 정확히 반응하고 예외 상황에도 멈추지 않는 완벽한 제품(Product)</span><!--EndFragment-->\n\n<br>교육 공지: 온라인 6개 과정 이수 및 최종 과제 평가</p><p>답변 부탁 드립니다.</p>",
+    "author_id": null,
+    "author_name": "미국 이란?",
+    "file_ids": "[]",
+    "group_id": null,
+    "status": "open",
+    "is_pinned": 0,
+    "create_dt": "2026-03-08 04:27:08",
+    "update_dt": "2026-03-09 00:55:04"
   }
 ]

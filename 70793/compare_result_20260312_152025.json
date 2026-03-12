@@ -1,0 +1,239 @@
+[
+  {
+    "idx": 1,
+    "id": 117,
+    "title": "AI Bootcamp 최종과제 주제 문의드립니다.",
+    "content": "안녕하세요, AI Bootcamp 최종 과제 제출 전에 옆에 붙어있는 챗봇 통해서 평가기준 점검시 모두 충족된다고 결과가 나왔었고 (점수 환산 요청시 100) 코드 기능 수행 결과도 다른 합격자분들이랑 비슷한 정도로 결과가 나왔었는데요,왜 미이수 처리된건지 문의드립니다.",
+    "actual_answer": "안녕하세요, 확인 결과 정상적으로 College 시스템 반영 되어 있습니다.\n\nCollege [My Page]-[자격증]에 [AI Literacy 인증 정보]라고 따로 메뉴가 있는데\n\n혹시 다른 메뉴로 들어가신 게 아닌지 확인 해주시면 감사하겠습니다.",
+    "label": "SUBMISSION_POLICY",
+    "confidence": "high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "과제 제출 결과와 관련된 정책 문의이므로 SUBMISSION_POLICY로 분류.",
+    "strategy_base": "tool_rag",
+    "mode_a": {
+      "strategy": "tool_rag",
+      "rag_score": 0.7158,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp 최종 과제 미이수 처리에 대한 문의에 대해 말씀드리겠습니다. 과제 결과는 수강기간 종료 후 약 2주 뒤에 발표되며, 이 과정에서 평가 기준 등을 종합적으로 고려하여 결정됩니다. 따라서 점수 환산 결과와 코드 기능 수행 결과가 잘 나왔다고 하더라도, 최종 결과는 다른 요소들을 포함하여 다르게 나올 수 있습니다.\n\n결과 발표 시 안내 이메일 및 AI Talent Lab 페이지에서 수료 여부를 확인할 수 있으니 참고하시기 바랍니다.\n\n확인 후 추가적인 사항이 필요하면 안내드리겠습니다. 감사합니다."
+    },
+    "mode_b": {
+      "strategy": "tool_rag",
+      "rag_score": 0.7158,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp 최종 과제의 미이수 처리 이유에 대한 문의를 주셨습니다. 해당 결과는 마이페이지에서 확인할 수 있으며, 이수이력이 최종 결과를 반영하고 있습니다. 과제 평가 기준에 대해 헷갈릴 수 있으나, 그와 별개로 정해진 기준에 따라 최종 평가가 이루어지므로, 실제 제출 결과와 평가 점수에 따라 최종적으로 수료 처리 여부가 결정됩니다.\n\n자세한 내용은 이수이력 페이지를 통해 확인해 주시기 바라며, 추가적인 궁금증이 있으시면 확인 후 안내드리겠습니다.\n\n감사합니다."
+    },
+    "word_overlap": 0.225
+  },
+  {
+    "idx": 2,
+    "id": 119,
+    "title": "Bootcamp 미이수처리 사유 문의",
+    "content": "안녕하세요. 이번에 AI Bootcamp 강의 수강중에 있습니다.최종과제 제출시 사내업무와 무관한 주제로 서비스 기획 및 개발을 진행해도 평가에 영향이 없는지 문의드립니다.실제 업무로 진행하기에는 보안문제도 있고, 인터넷에 잘 정리된 PDF 문서들이 많아서 해당 문서들로 과제를 진행하고 싶어서 문의드립니다. ( 예: 개인 투자 포트폴리오 추천 )",
+    "actual_answer": "(실제 답변 없음)",
+    "label": "ASSIGNMENT_DEVELOPMENT",
+    "confidence": "medium",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "과제 구현 방법에 대한 질문이지만, 평가 기준이 명확하지 않아 추가 정보가 필요할 수 있음.",
+    "strategy_base": "human_review",
+    "mode_a": {
+      "strategy": "human_review",
+      "rag_score": 0.6606,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp 최종과제 수행 시 사내 업무와 무관한 주제로 서비스 기획 및 개발을 진행해도 평가에 큰 영향은 없습니다. 다만, 과제가 실제 업무와 동떨어진 주제일 경우, 관련성을 판단할 수 있는 내용을 충분히 포함하는 것이 좋습니다. 예를 들어, 개인 투자 포트폴리오 추천 같은 주제를 선택하셨을 때, 기획의 목적, 기대 효과 및 수업에서 배운 AI 기술을 어떻게 적용할 것인지에 대한 명확한 설명이 필요합니다.\n\n보안 문제에 대한 우려도 이해하지만, 과제를 통해 배우고 실습하는 것이므로, 개인적인 주제와 학습의 연관성을 잘 보여주시면 좋을 것 같습니다.\n\n추가로 궁금한 점이 있으시면 언제든지 문의해 주세요.\n\n감사합니다."
+    },
+    "mode_b": {
+      "strategy": "human_review",
+      "rag_score": 0.7956,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\n최종과제 주제는 사내업무와 무관한 주제도 가능합니다. 인터넷 공개 PDF 문서 활용도 허용되므로, 개인 투자 포트폴리오 추천과 같은 주제로 진행하셔도 평가에 영향을 미치지 않습니다.\n\n창의적인 주제로 진행하시는 것을 권장합니다. \n\n감사합니다."
+    },
+    "word_overlap": 0.124
+  },
+  {
+    "idx": 3,
+    "id": 108,
+    "title": "AI Bootcamp 수료 시, AI Literacy도 수료한 것으로 처리되나요?",
+    "content": "안녕하세요.\n\nAI Bootcamp 수료 시, AI Literacy도 수료한 것으로 처리되는지 문의 드립니다.\n\n작년에 신청 후 인증시험은 보지 못한 AI Literacy 항목이 진행중 상태로 나오기에\n\n혹시 인증 시험을 통과해야 하는지 궁금해서 문의 드립니다.\n\n감사합니다.",
+    "actual_answer": "안녕하세요,\n\nAI Bootcamp 수료 시, AI Literacy도 수료한 것으로 처리되는 게 맞습니다. (A등급으로 인정)\n\n금주 결과 발표한 AI Bootcamp 11기를 이수하신 것이라면, 차주 중에 AI Literacy 인증과 함께 이수처리 예정인 점\n\n참고해주시면 감사하겠습니다.\n\n감사합니다.",
+    "label": "COURSE_INFO",
+    "confidence": "high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "AI Bootcamp 수료 시 AI Literacy 수료 여부에 대한 질문으로, 과정 간 관계에 해당함.",
+    "strategy_base": "tool_rag",
+    "mode_a": {
+      "strategy": "tool_rag",
+      "rag_score": 0.9938,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp 수료 시, AI Literacy도 수료한 것으로 처리되는 것이 맞습니다. (A등급으로 인정) 따라서 인증 시험을 별도로 통과할 필요는 없습니다.\n\n현재 신청하신 AI Literacy 항목이 진행중 상태로 나오고 있다면, 그에 대한 별도의 안내가 있을 것입니다.\n\n감사합니다."
+    },
+    "mode_b": {
+      "strategy": "tool_rag",
+      "rag_score": 0.9938,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp 수료 시, AI Literacy도 수료한 것으로 처리됩니다. 따라서 별도로 인증 시험을 통과할 필요는 없습니다. AI Bootcamp를 수료하신 경우, AI Literacy도 자동으로 이수 처리되며, A등급으로 인정됩니다.\n\n감사합니다."
+    },
+    "word_overlap": 0.391
+  },
+  {
+    "idx": 4,
+    "id": 116,
+    "title": "AI Bootcamp 수료 문의",
+    "content": "작년에 AI Literacy를 취득하지 않은 상태로 AI Bootcamp을 수강하다가 최종 과제를 제출하지 못했습니다.\n\n1. 26년도부터는 AI Literacy를 취득한 후에 AI Bootcamp 수강이 가능한 것으로 알고 있는데 맞을까요?\n\n2. 이전 수강 기록이 남아있는데 최종 과제 미제출 상태로 확인되어서 초기화 가능한지 문의 드립니다.",
+    "actual_answer": "안녕하세요. 문의사항 답변 드립니다.\n\n1. '26년도 기존 '25년과 마찬가지로 AI Literacy 취득 없이도 AI Bootcamp 수강 가능합니다.\n\n2. 이후 새로운 기수 참여 시 최종 과제 제출을 해주시면 되고, 별도로 조치하실 필요는 없습니다.",
+    "label": "COURSE_INFO",
+    "confidence": "medium",
+    "is_compound": true,
+    "sub_labels": [
+      "COURSE_INFO",
+      "ACCOUNT_ACTION_REQUIRED"
+    ],
+    "rationale": "AI Bootcamp의 수강 자격과 관련한 정확한 정보 요청 및 이전 수강 기록 초기화 문의가 포함되어 있습니다.",
+    "strategy_base": "human_review",
+    "mode_a": {
+      "strategy": "human_review",
+      "rag_score": 0.7687,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\n1. 맞습니다. 2026년도부터는 AI Literacy를 취득한 후에 AI Bootcamp 수강이 가능해집니다.\n\n2. 이전 수강 기록은 유지되며, 최종 과제를 미제출 상태에서 초기화하는 절차는 따로 지원하고 있지 않습니다. 따라서 과제를 다시 제출하시려면 현재 기수의 수업을 수강하셔야 합니다. \n\n확인 후 안내드리겠습니다. 감사합니다."
+    },
+    "mode_b": {
+      "strategy": "human_review",
+      "rag_score": 0.9885,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\n1. 2026년도에도 AI Literacy를 취득하지 않고 AI Bootcamp를 수강하는 것이 가능합니다. 즉, AI Literacy 취득 후 AI Bootcamp 수강이 필수는 아닙니다.\n\n2. 이전 수강 기록이 남아있는 경우, 최종 과제를 미제출 상태로 두신다면 새로운 기수에 참여하실 수 있으며, 별도로 초기화 조치를 요청하실 필요는 없습니다. \n\n감사합니다."
+    },
+    "word_overlap": 0.235
+  },
+  {
+    "idx": 5,
+    "id": 122,
+    "title": "AI Bootcamp 재수강 관련 문의",
+    "content": "안녕하세요.\n\nAI Bootcamp 재수강중입니다.\n\n이전 수강 기록(시청/과제)이 그대로 남아 있는데,\n\n초기화 없이 그대로 진행해도 되는지 확인 부탁드립니다.\n\n또한 그대로 진행이 가능하다면,\n\n과제들만 초기화해주실 수 있는지도 문의드립니다.\n\n과제 설명 및 제출 요건을 다시 확인하고 싶습니다.\n\n감사합니다.",
+    "actual_answer": "안녕하세요\n\n수강기록은 그대로 이어서 진행하시면 되며 현재 초기화는 제공하고 있지 않습니다.",
+    "label": "COURSE_INFO",
+    "confidence": "medium",
+    "is_compound": true,
+    "sub_labels": [
+      "COURSE_INFO",
+      "SUBMISSION_POLICY"
+    ],
+    "rationale": "재수강과 관련된 확인 요청이 포함되어 있으며, 과제 제출 요건에 대한 문의도 있어 COURSE_INFO로 분류.",
+    "strategy_base": "tool_rag",
+    "mode_a": {
+      "strategy": "tool_rag",
+      "rag_score": 0.6517,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp를 재수강하시는 경우, 이전 수강 기록(시청/과제)은 그대로 남아 있습니다. 초기화 없이 진행하셔도 되지만, 과제 초기화는 지원되지 않습니다. 과제 설명 및 제출 요건은 수강 중 새롭게 확인하실 수 있습니다.\n\n추가 문의사항이 있으시면 언제든지 말씀해 주세요.\n\n감사합니다."
+    },
+    "mode_b": {
+      "strategy": "tool_rag",
+      "rag_score": 0.9873,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp 재수강 시 수강 기록은 그대로 이어서 진행하시면 됩니다. 현재 초기화는 제공하고 있지 않으며, 과제 설명 및 제출 요건은 이전과 동일하게 진행하실 수 있습니다.\n\n확인 후 안내드리겠습니다. 감사합니다."
+    },
+    "word_overlap": 0.283
+  },
+  {
+    "idx": 6,
+    "id": 112,
+    "title": "부트캠프 수료 문의 드립니다.",
+    "content": "안녕하세요.\n\n과제 제출 후 2주 후에 결과가 나오신다고 해주셨는데 아직 결과가 나오지 않아 문의드립니다.\n\n과제 제출 후에도 진행중이라는 내용이 나오는것이 맞는지도 궁금합니다.",
+    "actual_answer": "안녕하세요.\n\n과제 제출이 아닌 수강 기간을 기준으로 종료 후 2주 뒤 결과가 발표됩니다.",
+    "label": "SUBMISSION_POLICY",
+    "confidence": "high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "과제 제출 결과 발표 시기에 대한 명확한 질문이 포함되어 있으며, 문의 내용이 단일하고 구체적이다.",
+    "strategy_base": "tool_rag",
+    "mode_a": {
+      "strategy": "tool_rag",
+      "rag_score": 0.9918,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\n부트캠프의 최종과제 결과는 수강 기간이 종료된 후 약 2주 뒤에 발표됩니다. 과제 제출 후 진행 중이라는 내용이 나오는 것은 정상적인 상태입니다. 과제가 제출 완료된 상태라면 결과 발표를 기다리시면 됩니다.\n\n결과 발표 시 안내 메일이 발송되므로, 메일 확인을 부탁드립니다.\n\n감사합니다."
+    },
+    "mode_b": {
+      "strategy": "tool_rag",
+      "rag_score": 0.9918,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\n부트캠프의 최종과제는 수강 기간 종료 후 2주 뒤에 결과가 발표됩니다. 과제 제출 후 '진행중'이라는 메시지가 나타나는 것은 정상적인 상태입니다. 수료 여부는 결과 발표 시 안내 메일을 통해 확인할 수 있으며, AI Talent Lab 페이지 또는 AX College에서도 확인 가능합니다.\n\n추가로 궁금하신 점이 있으시면 언제든지 문의해 주세요. 감사합니다."
+    },
+    "word_overlap": 0.294
+  },
+  {
+    "idx": 7,
+    "id": 126,
+    "title": "제출기한",
+    "content": "강의는 이수하였고 과제 준비 중인데 반드시 2월 13일까지 제출 해야 하나요?",
+    "actual_answer": "안녕하세요.\n\n2월 13일 23시59분 과제 제출이 마감됩니다.\n\n재수강 시 수강하신 부분부터 이어서 진행하실 수 있습니다.",
+    "label": "SUBMISSION_POLICY",
+    "confidence": "very_high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "과제 제출 기한에 대한 명확한 질문이 포함되어 있어 분류가 용이함.",
+    "strategy_base": "tool_rag",
+    "mode_a": {
+      "strategy": "human_review",
+      "rag_score": 0.5025,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp의 과제 제출 마감일은 2026-03-20입니다. 따라서 2월 13일 까지 제출하셔야 하는 것은 아닙니다. 해당 마감일까지 과제를 준비하셔서 제출하시면 됩니다.\n\n감사합니다."
+    },
+    "mode_b": {
+      "strategy": "tool_rag",
+      "rag_score": 0.9487,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp의 과제 제출 마감일은 2026년 3월 20일입니다. 따라서 2월 13일까지 제출해야 하는 것은 아닙니다. \n\n과제는 마감일 이전까지 제출하실 수 있습니다. \n\n감사합니다."
+    },
+    "word_overlap": 0.4
+  },
+  {
+    "idx": 8,
+    "id": 104,
+    "title": "Bootcamp 미이수처리 사유 문의",
+    "content": "안녕하세요,\n\nAI Bootcamp 최종 과제 제출 전에 옆에 붙어있는 챗봇 통해서 평가기준 점검시 모두 충족된다고 결과가 나왔었고 (점수 환산 요청시 100) 코드 기능 수행 결과도 다른 합격자분들이랑 비슷한 정도로 결과가 나왔었는데요,\n\n왜 미이수 처리된건지 문의드립니다.",
+    "actual_answer": "(실제 답변 없음)",
+    "label": "ACCOUNT_ACTION_REQUIRED",
+    "confidence": "high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "개인의 수강 상태에 대한 직접적인 조치가 필요하여 운영자의 확인이 요구됨.",
+    "strategy": "no_response",
+    "mode_a": null,
+    "mode_b": null
+  },
+  {
+    "idx": 9,
+    "id": 106,
+    "title": "Bootcamp 미수료 사유 관련 문의",
+    "content": "안녕하세요.\n\n지금 결과를 확인해 보니, 미수료로 나와서, 명확한 미수료 사유에 대해 확인하고자 문의글 남깁니다.\n\n교육과정 내용에 기반해서 최종 과제를 수행했고,\n\n\"더 나아지기 위한 제안\" 부분을 보면, 특별히 미수료 될만한 사유에 대한 피드백을 확인하지 못했습니다.\n\n(추가 develop이 되었으면 좋겠다는 내용과, 확장성을 고려해 틀만 만들어둔 일부 코드가 미사용으로 보인다는 내용 등인 것 같습니다.)\n\n-> 해당 내용은 설계 내용 작성 시, \"확장성을 고려해 틀만 만들어 두었다\"고 명시했던 걸로 기억합니다.\n\n최종 제출한 과제가 실행 가능하고, 동작 테스트 가능하도록 샘플코드도 따로 첨부해서 넣어 두었는데...\n\n미수료 된 명확한 사유가 무엇인지 확인해 보고 싶습니다.\n\n감사합니다.",
+    "actual_answer": "안녕하십니까 매니저님\n\n평가 결과를 바탕으로 피드백 작성 시 모호하게 전달되는 부분들이 있어, 더 명확히 할 계획입니다.\n\n\"더 나아지기 위한 제안\" 부분은 명확히 충족해야할 요건에 대해 설명하는 방향으로 변경하겠습니다.\n\n요청하신 부분들에 대해는 따로 확인하실 수 있도록 하겠습니다.\n\n감사합니다.",
+    "label": "SUBMISSION_POLICY",
+    "confidence": "high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "과제 미수료 사유와 관련하여 명확한 피드백을 요청하는 내용이므로, 과제 제출 정책 관련 문의로 분류됨.",
+    "strategy_base": "tool_rag",
+    "mode_a": {
+      "strategy": "tool_rag",
+      "rag_score": 0.9938,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\n미수료 사유에 대한 문의를 주셔서 감사합니다. 평가 결과가 명확히 전달되지 않아 불편을 겪으신 점에 대해 사과 드립니다. \"더 나아지기 위한 제안\" 부분에서 특정 요건을 충족하지 못한 것으로 판단된 듯 합니다. 하지만 구체적인 이유는 내부적으로 다시 확인하여 명확한 피드백을 드리는 방향으로 진행하겠습니다.\n\n추가적인 문의사항이 있으시면 언제든지 말씀해 주세요. 확인 후 안내드리겠습니다.\n\n감사합니다."
+    },
+    "mode_b": {
+      "strategy": "tool_rag",
+      "rag_score": 0.9938,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nBootcamp 미수료에 대해 문의 주셔서 감사합니다. 현재 미수료 사유는 Evaluation 팀의 피드백을 바탕으로 판단됩니다. \"더 나아지기 위한 제안\" 부분에서의 제안 사항은 충족해야 할 요건에 대한 보다 명확한 설명이 필요할 수 있습니다.\n\n제출하신 과제가 실행 가능하고 동작 테스트가 가능하다는 점은 확인할 수 있으나, 특정한 미수료 사유에 대한 자세한 내용은 Evaluation 팀과 별도로 확인하셔야 할 사항입니다. 해당 내용을 종합적으로 검토하여 앞으로 개선할 수 있도록 하겠습니다.\n\n확인 후 안내드리겠습니다. 감사합니다."
+    },
+    "word_overlap": 0.192
+  },
+  {
+    "idx": 10,
+    "id": 111,
+    "title": "AI Bootcamp 수료 기준 문의",
+    "content": "안녕하세요,\n\n오늘 결과 발표난 걸 보니 미수료로 되어 최종과제가 합격선을 통과하지 못한 것으로 판단하고 있습니다.\n\n다음 기수를 준비해야 하겠습니다만, 상세 평가를 봐도 어떤게 부족해서 fail인건지 잘 모르겠네요.\n\n느낌적인 느낌으로 판단하는건 아닐텐데,정확한 pass/fail 기준이 어떻게 되는지요?\n\n상세 평가에 더 나아질 수 있는 점이라고 표현된 것들은 Nice to Have가 기재되어 있는 것 같고, Must Have에 대한 내용이 궁금합니다.\n\n---\n\n기술 요소 활용\n\n잘한 점\n\nLangGraph 기반 멀티 에이전트 구조가 코드로 일관되게 구현되어 있습니다. Researcher(검색/수집)–Reviewer(필터/승인)–Writer(리포트 작성)로 역할이 분리되고, Supervisor가 conditional edge로 라우팅/루프를 제어하는 설계가 명확합니다.\n\nResearcher에 ReAct + Tavily tool calling을 붙여, LLM이 능동적으로 검색 도구를 호출하도록 구성한 점이 좋습니다.\n\nStreamlit에서 LangGraph stream을 따라 중간 산출물(Researcher/Reviewer 출력)을 확인할 수 있게 한 것은 에이전트 워크플로우의 “관찰 가능성(observability)”을 높이는 좋은 선택입니다.\n\n더 나아질 수 있는 점\n\nReviewer의 [APPROVED]/[NEEDS_MORE_RESEARCH] 태그를 프롬프트 규칙에만 의존하기보다, pydantic/JSON schema 기반의 구조화 출력 + 파싱/검증 실패 시 재요청 같은 가드레일을 두면 라우팅 신뢰성이 크게 올라갑니다.\n\n현재 state가 messages/next 중심으로 단순해 보여 근거(source, url, date), 검색 쿼리, 제외 사유, 신뢰도 점수 등을 상태로 누적/관리하기 어렵습니다. 상태 스키마를 확장하면 “에이전틱 루프”의 재현성과 디버깅이 좋아집니다.\n\n**Memory(멀티턴/영속 저장)**가 UI 히스토리에만 머물러 있어, LangGraph checkpointer(예: SQLite/Postgres)나 세션별 저장소를 붙이면 “브리핑 생성→수정 요청→재생성” 같은 실제 사용 흐름을 안정적으로 지원할 수 있습니다.\n\n보안 도메인 서비스 특성상 verify=False(TLS 검증 비활성)는 운영 리스크가 큽니다. 불가피한 환경이라면 옵션화(기본 True), 예외 범위 최소화, 경고 로그/대체 경로(프록시/사내 CA/다른 소스)까지 포함해 안전장치를 두면 좋습니다.\n\n(요구사항 관점) RAG/VectorDB 구성이 비어 있어, 웹검색 기반이더라도 수집→정규화→임베딩→인덱싱→retrieval로 이어지는 최소 파이프라인을 넣으면 기술 요소 활용 폭이 넓어집니다.\n\n주제 및 기술 이해도\n\n잘한 점\n\n보안 담당자의 뉴스 브리핑 자동화라는 실사용 맥락이 분명하고, ‘방대한 뉴스에서 중요한 정보 선별/요약’이라는 Pain Point가 명확합니다. 기존 키워드 검색/단일 LLM 요약의 한계를 짚고, 기대효과(업무 리소스 절감)까지 연결한 점이 기획적으로 좋습니다.\n\n기획서의 역할 정의가 코드(Researcher/Reviewer/Writer + Supervisor 라우팅)로 자연스럽게 이어져, 설계-구현 정합성이 전반적으로 높습니다.\n\n더 나아질 수 있는 점\n\n“기존 요약 서비스 대비 우위”를 더 강하게 보여주려면, 보안 도메인 특화 요소를 기능/데이터 구조로 고도화하면 좋습니다.\n\n출처 신뢰도 점수화(도메인 화이트리스트/블랙리스트, 0~5 스코어)\n\n최근 N일 필터, 중복 기사 클러스터링(동일 사건 다수 기사 묶기)\n\nCVE/벤더/영향도/IOC 등 보안 인텔 필드 구조화(가능하면 STIX 등 포맷 참고)\n\n기술 스택 설명에서 “무엇을 썼는지”를 넘어 왜 그 조합이 필요한지, 한계와 트레이드오프는 무엇인지까지 정리하면 전달력이 커집니다. 특히 웹검색 기반이라도 RAG를 선택하지 않은 이유/대안(하이브리드: 웹 재검색 + VectorDB 캐시)을 명확히 하면 설계 설득력이 올라갑니다.\n\nReviewer 승인 로직이 ‘태그 문구’에 의존하는 만큼, **구조적 파싱/검증을 포함한 설계(상태값 기반 분기)**로 바꾸면 차별 기능(검증/품질관리)의 신뢰도가 더 높아집니다.\n\n서비스 완성도\n\n잘한 점\n\nStreamlit UI가 실제 실행 가능하며, 채팅 입력/출력과 함께 노드 진행상태 및 중간 결과를 expander로 제공해 사용자 입장에서 결과 신뢰를 높였습니다.\n\ngraph/nodes/prompts/config 등 기본적인 모듈 분리가 되어 있어, 확장 가능성의 기반은 갖추고 있습니다.\n\n더 나아질 수 있는 점\n\n설계서에 언급된 FastAPI 백엔드 분리가 구현에 없어서, 서비스 구조 일관성을 위해 API 레이어를 분리하면 좋습니다. (예: /briefing 요청 → 백엔드에서 그래프 실행 → 결과/로그 반환)\n\n예외처리/입력검증을 “사전 차단형”으로 강화하면 운영 품질이 올라갑니다.\n\n환경변수 누락/모델 설정 오류 사전 체크\n\n외부 검색 API 타임아웃/재시도/레이트리밋 처리\n\nTavily 응답 형식 변화 대비(스키마 검증)\n\nReviewer 태그 파싱 실패 시 재질의 또는 안전 종료\n\nUX 측면에서 아래 기능이 추가되면 “브리핑 자동화 도구”로서 완성도가 더 높아집니다.\n\n실행 중단/리셋, 설정값 가이드(누락 안내)\n\n결과 복사/다운로드(리포트 저장), 검색 반복 시 근거 누적 정리\n\n처리 시간 표시 및 단계별 로딩/타임아웃 메시지\n\n테스트/패키징(엔트리포인트, 간단한 통합 테스트, 린트/타입힌트)을 추가하면 협업 및 배포 안정성이 좋아집니다.",
+    "actual_answer": "안녕하십니까 매니저님\n\n말씀주신대로 필수 기술 요소 부분이 어떤 건지 피드백 상에서 알아보기 어렵게 제공되었습니다.\n\nMust Have에 해당하는 부분은 과제 소개 시 '필수 기술 요소'에 해당하는 부분으로,\n\n해당 부분들에 대해 더 명확히 피드백을 할 수 있도록 개선하겠습니다.\n\n감사합니다.",
+    "label": "SUBMISSION_POLICY",
+    "confidence": "high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "문의 내용이 최종 과제의 평가 기준과 합격 여부에 관한 것으로, 과제 제출 정책과 관련이 깊음.",
+    "strategy_base": "tool_rag",
+    "mode_a": {
+      "strategy": "human_review",
+      "rag_score": 0.4309,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp의 최종과제 평가 기준은 명확한 Pass/Fail 기준을 바탕으로 이루어지며, 기재된 피드백 중 \"더 나아질 수 있는 점\" 부분은 해당 기준을 충족하기 위해 개선할 점에 대한 제안으로 작성되었습니다. \n\n\"Must Have\"에 관한 구체적인 내용은 평가 세부 사항에 따라 다를 수 있지만, 일반적으로 기본 기능 구현, 안정성, 사용성 등의 항목이 포함됩니다. 각 제안들이 구체적으로 어떤 기준을 충족해야 하는지에 대한 보다 명확한 기준은 추후 공지를 통해 안내될 예정입니다.\n\n문의 주신 내용에 대한 보다 구체적인 사항은 확인 후 안내드리겠습니다. \n\n감사합니다."
+    },
+    "mode_b": {
+      "strategy": "human_review",
+      "rag_score": 0.6248,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp 최종과제 수료 기준에 대한 문의 주셔서 감사합니다. 수료 여부에 대한 명확한 기준은 \"Must Have\" 요소와 \"Nice to Have\" 요소로 구분되며, 필수 기술 요소에 대한 내용은 과제 소개 시 '필수 기술 요소'에서 확인하실 수 있습니다. \n\n이번 과제 결과에서 'Must Have'에 해당하는 지점이 어떤 것인지 피드백을 보다 명확하게 제공하도록 개선하겠습니다. \n\n감사합니다."
+    },
+    "word_overlap": 0.149
+  }
+]

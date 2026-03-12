@@ -29,8 +29,6 @@ from enum import Enum
 from openai import OpenAI
 from dotenv import load_dotenv
 load_dotenv()
-
-api_key = os.getenv("API_KEY")
 # ──────────────────────────────────────────────────────────────────
 # HTML 전처리
 # ──────────────────────────────────────────────────────────────────
@@ -289,10 +287,11 @@ class InquiryAgent:
     ADMIN_IDS = {2, 7, 61, 442, 2425}
 
     def __init__(self, knowledge_base_path: str = None, api_key: str = None):
-        self.kb = self._load_knowledge_base(knowledge_base_path)
+        self.kb       = self._load_knowledge_base(knowledge_base_path)
+        self.schedule = self._load_schedule()
         self.inquiry_history: List[Dict] = []
         self._client = OpenAI(
-            api_key=api_key or os.environ.get("OPENAI_API_KEY")
+            api_key=api_key or os.environ.get("OPENAI_API_KEY"),
         )
         self.vector_store: Optional[VectorStore] = None
 
@@ -303,12 +302,19 @@ class InquiryAgent:
         if path and os.path.exists(path):
             with open(path, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        # knowledge_base.json 이 같은 디렉토리에 있으면 자동 로드
         default_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'knowledge_base.json')
         if os.path.exists(default_path):
             with open(default_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         return {"prior_knowledge": {}, "label_examples": {}, "error_solutions": []}
+
+    def _load_schedule(self) -> Dict:
+        """schedule.json 로드. 없으면 빈 딕셔너리 반환."""
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schedule.json')
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        return {}
 
     # ── 유틸리티 ──────────────────────────────────────────────────
 
@@ -348,6 +354,78 @@ class InquiryAgent:
         lines += ["", "### 주요 사실"]
         for fact in pk.get("important_facts", []):
             lines.append(f"- {fact}")
+
+        return "\n".join(lines)
+
+    def _schedule_section(self) -> str:
+        """schedule.json의 일정 정보를 프롬프트용 텍스트로 변환."""
+        if not self.schedule:
+            return ""
+
+        lines = ["## 현재 운영 일정 (동적 정보 — 기수마다 갱신)"]
+
+        lt = self.schedule.get("literacy", {})
+        if lt:
+            cp = lt.get("course_period", {})
+            lines += [
+                f"### AI Literacy",
+                f"- 수강 기간: {cp.get('start', '미정')} ~ {cp.get('end', '미정')}  ({cp.get('note', '')})",
+            ]
+            ce = lt.get("certification_exam", {})
+            if ce:
+                ep = ce.get("enrollment_period", {})
+                lines += [
+                    f"- 인증시험 {ce.get('current_round', '')}: 시험일 {ce.get('exam_date', '미정')}  |  신청 기간: {ep.get('start', '미정')} ~ {ep.get('end', '미정')}  |  {ce.get('status', '')}",
+                    f"  ({ce.get('note', '')})",
+                ]
+
+        bc = self.schedule.get("bootcamp", {})
+        if bc and bc.get("current_cohort"):
+            cohort = bc["current_cohort"]
+            ep = bc.get("enrollment_period", {})
+            cp = bc.get("course_period", {})
+            cycle = bc.get("cohort_cycle_weeks")
+            cycle_str = f"  (기수 주기: {cycle}주)" if cycle else ""
+            ep_start = ep.get('start') or '미정'
+            ep_end   = ep.get('end')   or '미정'
+            ep_line  = (f"- 모집 기간: {ep_start} ~ {ep_end}  ({ep.get('note', '')})"
+                        if ep_start != '미정' or ep_end != '미정'
+                        else "- 모집 기간: 미정")
+            lines += [
+                f"### AI Bootcamp {cohort}{cycle_str}",
+                ep_line,
+                f"- 수강 기간: {cp.get('start', '미정')} ~ {cp.get('end', '미정')}  ({cp.get('note', '')})",
+                f"- 과제 제출 마감: {bc.get('assignment_deadline', '미정')}",
+                f"- 결과 발표 예정: {bc.get('result_announcement', '미정')}",
+            ]
+            if bc.get("notice"):
+                lines.append(f"- 공지: {bc['notice']}")
+            for uc in bc.get("upcoming_cohorts", []):
+                uc_ep = uc.get("enrollment_period", {})
+                uc_cp = uc.get("course_period", {})
+                lines += [
+                    f"#### 예정 {uc['cohort']} ({uc.get('status', '')})",
+                    f"  - 신청 기간: {uc_ep.get('start', '미정')} ~ {uc_ep.get('end', '미정')}",
+                    f"  - 수강 기간: {uc_cp.get('start', '미정')} ~ {uc_cp.get('end', '미정')}",
+                ]
+
+        mp = self.schedule.get("master_project", {})
+        if mp and mp.get("current_cohort"):
+            cohort = mp["current_cohort"]
+            rp = mp.get("recruitment_period", {})
+            cp = mp.get("course_period", {})
+            lines += [
+                f"### AI Master Project {cohort}",
+                f"- 모집 기간: {rp.get('start', '미정')} ~ {rp.get('end', '미정')}",
+                f"- 수강 기간: {cp.get('start', '미정')} ~ {cp.get('end', '미정')}",
+            ]
+            if mp.get("notice"):
+                lines.append(f"- 공지: {mp['notice']}")
+        elif mp and mp.get("notice"):
+            lines.append(f"### AI Master Project: {mp['notice']}")
+
+        if self.schedule.get("global_notice"):
+            lines += ["", f"### 전체 공지", self.schedule["global_notice"]]
 
         return "\n".join(lines)
 
@@ -394,12 +472,15 @@ class InquiryAgent:
         content = self._strip_html(inquiry.get('content', ''))
 
         prior_knowledge = self._prior_knowledge_section()
+        schedule        = self._schedule_section()
         label_descs     = self._label_description_section()
 
         system_prompt = f"""너는 AI Talent Lab 문의 분류 Agent야.
 문의를 읽고 아래 10개 카테고리 중 하나로 분류하고, 신뢰도를 판단해.
 
 {prior_knowledge}
+
+{schedule}
 
 ## 카테고리 (label) 정의
 
@@ -426,14 +507,14 @@ class InquiryAgent:
 ## 신뢰도 (confidence_level) 판단 요소:
 ① 문의 명확성     — 무엇을 묻는지 텍스트만 봐도 알 수 있는가
 ② 카테고리 단일성  — 10개 중 딱 하나에만 해당하는가
-③ Agent 처리 가능성 — 시스템/계정 조치 없이 해결 가능한가
-④ 필요 정보 충분성  — 답변하기에 충분한 정보가 문의에 담겨 있는가
+③ 필요 정보 충분성  — 답변하기에 충분한 정보가 문의에 담겨 있는가
+④ KB/일정 정보 보유 — 위의 사전 지식·운영 일정만으로 답변 가능한가
 
 레벨:
 - very_high : ①②③④ 모두 충족
-- high      : ①②③ 충족, ④ 일부 부족
-- medium    : ①② 충족, ③ 불확실
-- low       : ① 또는 ② 미충족
+- high      : ①②④ 충족, ③ 일부 부족 (추가 확인 불필요한 수준)
+- medium    : ①② 충족, ③ 또는 ④ 불확실 (답변 가능하나 운영자 검토 권장)
+- low       : ① 또는 ② 미충족 (문의 자체가 불명확하거나 분류 불가)
 
 ## 복합 문의 감지
 문의 내에 성격이 서로 다른 카테고리의 질문이 2개 이상 포함된 경우:
@@ -591,6 +672,7 @@ class InquiryAgent:
             is_draft = (confidence == ConfidenceLevel.MEDIUM)
 
         prior_knowledge = self._prior_knowledge_section()
+        schedule        = self._schedule_section()
 
         greetings = {
             'ko': '안녕하세요, AI Talent Lab입니다.',
@@ -608,6 +690,8 @@ class InquiryAgent:
 {'※ 이 답변은 운영자 검토용 초안이야. [초안] 태그로 시작해.' if is_draft else ''}
 
 {prior_knowledge}
+
+{schedule}
 
 [답변 규칙]
 - {category_line}
@@ -892,7 +976,8 @@ def main():
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         print("[오류] OPENAI_API_KEY 환경변수가 설정되지 않았습니다.")
-        print("  70793/.env 파일을 만들고 OPENAI_API_KEY=sk-... 를 입력하세요.")
+        print("  70793/.env 파일에 아래 항목을 입력하세요:")
+        print("    OPENAI_API_KEY=<your-key>")
         return
 
     agent = InquiryAgent(api_key=api_key)
