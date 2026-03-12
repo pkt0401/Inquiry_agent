@@ -19,7 +19,17 @@
           "capacity": 500,
           "note": "인증 시험은 별도 신청이 필요하며, 신청 기간 내에만 접수 가능. 합격 시 AI Literacy 인증 취득."
         },
-        "keywords": ["ai literacy", "리터러시", "인증", "lv1", "상시", "상시오픈", "인증시험", "vod", "공동필수"]
+        "keywords": [
+          "ai literacy",
+          "리터러시",
+          "인증",
+          "lv1",
+          "상시",
+          "상시오픈",
+          "인증시험",
+          "vod",
+          "공동필수"
+        ]
       },
       {
         "id": "ai-bootcamp",
@@ -42,18 +52,42 @@
           "required_lectures": 6,
           "topic": "AI Agent 제작",
           "submittable_multiple_times": true,
-          "components": ["기획 설계 문서(1·2단계)", "소스코드(3단계)"],
+          "components": [
+            "기획 설계 문서(1·2단계)",
+            "소스코드(3단계)"
+          ],
           "evaluation": "과제 제출 마감 후 약 2주 뒤 결과 발표. 이메일 및 Slack 채널로 안내. 최종 평가는 코드 리뷰 내 5가지 항목과 동일한 기준으로 진행되며, 과제 설명 내 필수 기술요소를 충실히 활용했는지 평가함. 재제출 시 마지막 제출 코드를 기준으로 최종 평가.",
           "note": "AI Bootcamp 수료 시 AI Literacy도 수료 처리됨 (A등급 인정)."
         },
-        "keywords": ["bootcamp", "부트캠프", "llm", "rag", "langchain", "azure", "최종과제", "lv2", "기수", "기수제", "agent", "에이전트", "streamlit", "mcp", "a2a"]
+        "keywords": [
+          "bootcamp",
+          "부트캠프",
+          "llm",
+          "rag",
+          "langchain",
+          "azure",
+          "최종과제",
+          "lv2",
+          "기수",
+          "기수제",
+          "agent",
+          "에이전트",
+          "streamlit",
+          "mcp",
+          "a2a"
+        ]
       },
       {
         "id": "ai-master-project",
         "level": "LV3",
         "name": "AI Master Project",
         "description": "실무 AI 프로젝트 경험 과정.",
-        "keywords": ["master project", "마스터", "실무", "lv3"]
+        "keywords": [
+          "master project",
+          "마스터",
+          "실무",
+          "lv3"
+        ]
       }
     ],
     "platform_features": {
@@ -77,7 +111,6 @@
       "AI Bootcamp 최종과제 평가는 코드 리뷰 내 5가지 항목과 동일한 기준으로 진행. 재제출 시 마지막 제출 코드 기준으로 최종 평가. 필수 기술요소 충실 활용 여부가 핵심 평가 기준."
     ]
   },
-
   "label_examples": {
     "ACCOUNT_ACTION_REQUIRED": {
       "description": "개인 계정·권한·수강 접근 권한에 대한 직접 조치가 필요한 문의. 운영자가 시스템에서 해당 사용자 설정을 변경해야 해결 가능.",
@@ -94,23 +127,12 @@
           "answer": "안녕하세요! 조치해드렸습니다."
         },
         {
-          "title": "[AI Literacy] 인증 시작하기 버튼 비활성화",
-          "question": "AI Literacy 인증 시작하기 버튼 활성화가 안됩니다. 확인 부탁드립니다.",
-          "answer": "안녕하세요.\nAI Literacy 인증 시작하기 버튼은 인증 시험 응시자 대상으로 기간 내 활성화됩니다.\n인증 대상자 안내를 받지 않으셨다면 비활성화 상태가 정상 상태입니다."
-        },
-        {
           "title": "수강관련 문의",
           "question": "신입구성원 AI Bootcamp 과정으로 ~2/28까지 수강이 가능하다고 안내받았으나, 현재 시스템에서 ~2/13까지의 개별 신청 수강 기간이 적용되어 AI Bootcamp 버튼이 비활성화되어 있습니다.",
           "answer": "안녕하세요. 확인 후 신입구성원 과정 기준으로 수강 기간 설정해드리겠습니다."
-        },
-        {
-          "title": "입장하기 불가능",
-          "question": "2월 26일에 시험을 보려고 하는데 버튼이 활성화가 안됩니다. 1월 말에 1차 시험 봤던 결과보기 버튼만 활성화가 됩니다.",
-          "answer": "안녕하세요\n금일 응시자가 아닌것으로 확인되며 관련 내용 담당자분께 전달 완료했습니다."
         }
       ]
     },
-
     "PLATFORM_SYSTEM_ERROR": {
       "description": "플랫폼 서버·시스템 오류로 인한 기능 이상. 코드 문제가 아닌 플랫폼 자체의 버그나 일시 장애.",
       "typical_patterns": [
@@ -125,11 +147,6 @@
           "title": "console 접근/python script 실행이 안됩니다",
           "question": "위와 같은 에러가 나오면서 파일 실행이 안됩니다. 모든 파이썬 코드 작성 부분에서 동일한 에러가 나옵니다.",
           "answer": "안녕하세요 조치 완료했습니다."
-        },
-        {
-          "title": "[Boot Camp] 무한 로딩이 되고 있습니다 - 파이널 과제 제출",
-          "question": "IDE에서 파이썬 패키지가 로컬 환경과 달라서 venv deactivate 시키고, 따로 .venv를 만들고 패키지 설치 후 실행하였더니 무한 로딩이 걸리고 있습니다.",
-          "answer": "안녕하세요\n사이트 내에서 자동 설정되는 가상환경이 설치된 디스크와 과제 IDE의 파일 디스크의 사양이 달라 가상환경을 직접 만들고 실행 시 속도가 느리거나 로딩에 문제가 생길 수 있습니다.\n플랫폼 기본 설정 가상환경 사용을 권장드립니다."
         },
         {
           "title": "streamlit 서비스 개발 강의 중 실습 실행이 안됩니다",
@@ -148,7 +165,6 @@
         }
       ]
     },
-
     "VIDEO_PLAYBACK_ERROR": {
       "description": "강의 영상(VOD)이 재생되지 않거나 로딩만 되는 문제. 영상 스트리밍 서버 또는 네트워크 이슈.",
       "typical_patterns": [
@@ -164,7 +180,6 @@
         }
       ]
     },
-
     "FEATURE_REQUEST": {
       "description": "플랫폼 기능 개선, UI 변경, 새 기능 추가 등의 건의·요청 사항.",
       "typical_patterns": [
@@ -186,7 +201,6 @@
         }
       ]
     },
-
     "UNCATEGORIZED": {
       "description": "문의 내용이 불명확하거나, 여러 주제가 혼재되어 단일 카테고리로 분류하기 어려운 경우.",
       "typical_patterns": [
@@ -196,7 +210,6 @@
       ],
       "qa_examples": []
     },
-
     "COURSE_INFO": {
       "description": "강의 목록, 수강 방법, 과정 커리큘럼, 수료 조건, 과정 간 관계 등 교육 과정 정보 문의.",
       "typical_patterns": [
@@ -208,23 +221,12 @@
       ],
       "qa_examples": [
         {
-          "title": "3개의 강의를 완료하면 과제를 시작할 수 있다고 했는데 안되요",
-          "question": "3개의 강의를 완료하면 과제를 시작할 수 있습니다 라고 되어있는데 3개 강의 모두 완료했는데 과제를 할 수 있게 활성화가 안되네요?",
-          "answer": "안녕하세요\n최종 과제는 6개의 강의를 모두 수강완료해야 진행할 수 있습니다."
-        },
-        {
-          "title": "AI Bootcamp 수료 시, AI Literacy도 수료한 것으로 처리되나요?",
-          "question": "AI Bootcamp 수료 시, AI Literacy도 수료한 것으로 처리되는지 문의드립니다.",
-          "answer": "안녕하세요,\nAI Bootcamp 수료 시, AI Literacy도 수료한 것으로 처리되는 게 맞습니다. (A등급으로 인정)"
-        },
-        {
           "title": "Bootcamp 최종과제 주제",
           "question": "AI Bootcamp 강의 수강중입니다. 최종과제 제출 시 사내업무와 무관한 주제로 서비스 기획 및 개발을 진행해도 평가에 영향이 없는지 문의드립니다.",
           "answer": "안녕하세요.\n최종과제 주제는 사내업무와 무관한 주제도 가능합니다. 인터넷 공개 PDF 문서 활용도 허용됩니다. 창의적인 주제로 진행하셔도 됩니다."
         }
       ]
     },
-
     "SUBMISSION_POLICY": {
       "description": "과제 제출 횟수, 제출 마감 일정, 재제출 가능 여부, 평가 결과 발표 일정 등 과제 제출 관련 정책 문의.",
       "typical_patterns": [
@@ -257,18 +259,12 @@
           "answer": "제출완료 후 별도 안내는 없으며 최종과제 내 3건이 모두 완료 시 제출완료입니다."
         },
         {
-          "title": "Bootcamp 과제 제출 문의",
-          "question": "과제를 압축파일로 제출하였습니다. 결과를 확인해보니 '반 파일/코드 공란 이슈'라고 피드백이 와서 제출된 코드가 확인되지 않은 것으로 보입니다.",
-          "answer": "재평가 후 반영했습니다 감사합니다."
-        },
-        {
           "title": "Boot Camp 과제 자동 제출 문의",
           "question": "과제를 준비 중이었는데 들어와 보니 제출로 되어 있습니다. 과제 제출을 초기화 부탁드립니다. 어느 정도 시간이 지나면 자동으로 제출로 변경되는지요?",
           "answer": "과제 제출 후 다시 제출 버튼을 누르면 현재 시간으로 제출시간이 업데이트 됩니다. 과제 수정 후 재제출 부탁드립니다. 강의 영상이 있는 강의는 강의 영상이 모두 재생된 후 완료되며, 그 외는 제출 버튼을 통해 완료됩니다."
         }
       ]
     },
-
     "SERVICE_GUIDE": {
       "description": "플랫폼 사용 방법, IDE 사용법, 과제 제출 절차 등 플랫폼 이용 가이드 요청.",
       "typical_patterns": [
@@ -283,11 +279,6 @@
           "title": "IDE 사용법 가이드 부탁드립니다",
           "question": "Azure Open AI & LangChain 과제 진행하고 있는데 IDE 환경에서 실행시키는 방법과 에러 Tracking 방법 설명이 필요합니다.",
           "answer": "안녕하세요.\n웹사이트 내 IDE의 하단 console을 사용해 파이썬 파일 실행 및 동일 console 내에서 결과 확인이 가능합니다.\nStreamlit 앱의 경우 IDE 상단에 실행 버튼이 제공됩니다.\n에러 발생 시 console의 traceback 메시지를 확인하여 문제를 파악하시면 됩니다."
-        },
-        {
-          "title": "Bootcamp 최종과제 기획 및 설계 최초 양식 문의",
-          "question": "AI Bootcamp 최종과제 기획 및 설계 최초 양식을 다시 받을 수 있을지 문의드립니다. 작성중에 저장을 했는데 일부 내용이 삭제되어 양식 초본이 필요합니다.",
-          "answer": "안녕하세요 최종 과제 기획 내용을 안내드립니다.\n사이트 내 과제 페이지는 markdown 에디터로 구성되어 있습니다."
         },
         {
           "title": "Boot Camp 최종 과제 작성 환경 문의 (SKT망)",
@@ -306,7 +297,6 @@
         }
       ]
     },
-
     "ASSIGNMENT_DEVELOPMENT": {
       "description": "과제 구현 방법, 개발 방향, 아키텍처 설계, 기술 스택 활용법 등 과제 개발 자체에 대한 질문.",
       "typical_patterns": [
@@ -317,11 +307,6 @@
         "코드 구조·폴더 설계 방법"
       ],
       "qa_examples": [
-        {
-          "title": "[Boot Camp] Sub-Graph 구조 관련 문의",
-          "question": "멀티 에이전트 워크플로우를 학습하며 공통 로직을 agent.py로 추상화하는 방식을 익혔습니다. 실제 프로젝트에서 PDF 파싱, 요약, RAG 등 각 에이전트 간에 공유 로직이 있을 때, 이를 Sub-Graph 형태로 어떻게 구성해야 하는지 문의드립니다.",
-          "answer": "안녕하세요! 좋은 질문을 주셨네요.\n사실 명확한 Best Practice 폴더구조는 정의하기 어렵고 프로젝트 상황에 따라 유연하게 대처하는 것이 일반적입니다.\n공통 로직은 shared utility 함수로 분리하고, 각 에이전트의 Sub-Graph는 독립 모듈로 설계하는 방식을 권장드립니다."
-        },
         {
           "title": "bootcamp 관련 평가 기준 문의",
           "question": "교육과정을 수강하며 관련 기술들을 사용하고 배운 기술들을 응용해서 실제 사용 가능한 서비스를 만드는 데에 초점을 두었습니다. 평가 기준에 대해 문의드립니다.",
@@ -334,7 +319,6 @@
         }
       ]
     },
-
     "CODE_LOGIC_ERROR": {
       "description": "코드 에러, API 호출 실패, 파싱 오류, rate limit 등 순수하게 코드 또는 라이브러리 사용 문제.",
       "typical_patterns": [
@@ -346,11 +330,6 @@
         "파이썬 문법·로직 디버깅"
       ],
       "qa_examples": [
-        {
-          "title": "[Boot Camp] RAG 강의 Generation - Retriever 관련 질문",
-          "question": "retriever.invoke 라는 함수가 없이, 그냥 retriever 객체만 Prompt 아래 context 쪽에 넣어주면, langchain이 자동으로 retriever.invoke를 호출하는 건가요?",
-          "answer": "네 chain.invoke(question)을 호출하면 선언한 chain 안의 객체들에 대해 invoke 후 차례로 해당 output을 다음 객체에 전달하게 됩니다.\nretriever.invoke(question) 후 결과가 다음 chain인 prompt에 전달되어 prompt.invoke() → llm.invoke → ... 위와같은 동작으로 이루어지며, 아래 두 코드는 동일하게 됩니다:\n\nchain = ({\"context\": retriever, \"question\": RunnablePassthrough()} | prompt | llm | StrOutputParser())\nresponse = chain.invoke(question)"
-        },
         {
           "title": "Azure OpenAI API Key 관련 오류",
           "question": "OpenAIError: Missing credentials. Please pass one of api_key, azure_ad_token, azure_ad_token_provider, or the AZURE_OPENAI_API_KEY or AZURE_OPENAI_AD_TOKEN environment variables.",
@@ -364,7 +343,6 @@
       ]
     }
   },
-
   "error_solutions": [
     {
       "error_pattern": "missing credentials|azure_openai.*key|api.?key|openai_api_key",

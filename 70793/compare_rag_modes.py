@@ -4,6 +4,11 @@ RAG 검색 모드 비교 (답변 생성 포함)
 Mode A — label-aware  : 동일 label 우선, label=None 보조
 Mode B — similarity   : label 무시, 순수 유사도 상위 3개
 
+데이터:
+  - 전체 풀: inquiry_all.json (110건)
+  - 테스트: random_state로 N건 샘플링 → RAG 인덱스에서 제외 (leakage 방지)
+  - RAG:    나머지 (110-N)건
+
 각 테스트 문의에 대해:
   1. 질문 (title + content)
   2. 실제 답변 (운영자 실제 답변)
@@ -45,27 +50,33 @@ def build_actual_answer_map(comments: list) -> dict:
     return answer_map
 
 
-def load_agent():
+def load_agent(test_ids: set):
+    """test_ids를 받아 RAG 인덱스에서 해당 케이스를 제외한 agent 반환."""
     _load_dotenv()
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         print("[오류] OPENAI_API_KEY 환경변수가 없습니다.")
         sys.exit(1)
 
-    agent = InquiryAgent(api_key=api_key)
     all_inquiries = load_json_file(os.path.join(BASE, "inquiry_all.json"))
     all_comments  = load_json_file(os.path.join(BASE, "inquiry_comment_all.json"))
 
+    # leakage 방지: test 케이스는 RAG 인덱스에서 제외
+    train_inquiries = [x for x in all_inquiries if x["id"] not in test_ids]
+    train_comments  = [x for x in all_comments  if x.get("inquiry_id") not in test_ids]
+
     actual_answer_map = build_actual_answer_map(all_comments)
-    agent.load_inquiry_history(all_inquiries, all_comments, pre_label=True)
-    return agent, all_inquiries, actual_answer_map
+    agent = InquiryAgent(api_key=api_key)
+    agent.load_inquiry_history(train_inquiries, train_comments, pre_label=True)
+    print(f"RAG 인덱스: {len(train_inquiries)}건 (테스트 {len(test_ids)}건 제외)")
+    return agent, actual_answer_map
 
 
-def sample_test_cases(all_inquiries: list, n: int, seed: int) -> list:
-    """전체 문의에서 random_state 고정 후 n개 샘플링."""
+def sample_test_cases(n: int, seed: int) -> list:
+    """inquiry_all.json에서 random_state 고정 후 n개 샘플링."""
+    all_inquiries = load_json_file(os.path.join(BASE, "inquiry_all.json"))
     rng = random.Random(seed)
-    pool = list(all_inquiries)
-    return rng.sample(pool, min(n, len(pool)))
+    return rng.sample(all_inquiries, min(n, len(all_inquiries)))
 
 
 def print_hits(hits: list, mode_name: str):
@@ -199,11 +210,14 @@ def main():
     print("=== RAG 모드 비교: label-aware vs similarity-only ===")
     print(f"테스트 케이스: {N_CASES}개  |  random_state={RANDOM_STATE}  |  LLM 호출: 케이스당 3회\n")
 
-    agent, all_inquiries, actual_answer_map = load_agent()
-    print(f"\nAgent 준비 완료  |  전체 문의: {len(all_inquiries)}건  |  실제 답변 매핑: {len(actual_answer_map)}건\n")
-
-    test_cases = sample_test_cases(all_inquiries, N_CASES, RANDOM_STATE)
+    # 먼저 테스트 케이스 샘플링 (inquiry_all.json 전체에서 random)
+    test_cases = sample_test_cases(N_CASES, RANDOM_STATE)
+    test_ids   = {c["id"] for c in test_cases}
     print(f"샘플링 완료: {len(test_cases)}건 (random_state={RANDOM_STATE})\n")
+
+    # test_ids를 RAG에서 제외하여 leakage 방지
+    agent, actual_answer_map = load_agent(test_ids)
+    print(f"\nAgent 준비 완료  |  실제 답변 매핑: {len(actual_answer_map)}건\n")
 
     results = []
     for i, case in enumerate(test_cases, 1):

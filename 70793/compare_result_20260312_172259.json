@@ -1,0 +1,173 @@
+[
+  {
+    "idx": 1,
+    "id": 130,
+    "title": "AI Bootcamp 최종 제출하고 평가만 기다리면 되는게 맞는지 궁금합니다",
+    "content": "AI Bootcamp 최종 제출하고 평가만 기다리면 되는 상황이 맞는지 확인 해주실 수 있으신가요?",
+    "actual_answer": "네 맞습니다. 평가 결과 공개는 별도 안내 드릴 예정이니 참고 부탁드립니다.",
+    "label": "SUBMISSION_POLICY",
+    "confidence": "very_high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "문의 내용이 과제 평가 결과 발표에 관한 확인 요청으로 명확하다.",
+    "strategy_base": "tool_rag",
+    "mode_a": {
+      "strategy": "tool_rag",
+      "rag_score": 0.7125,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp 최종 과제를 제출한 후에는 평가 결과 발표를 기다리면 됩니다. 최종 과제의 결과 발표는 수강 기간 종료 후 약 2주 후에 이메일이나 Slack을 통해 안내됩니다.\n\n감사합니다."
+    },
+    "mode_b": {
+      "strategy": "tool_rag",
+      "rag_score": 0.7222,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp 최종 과제를 제출한 후에도 코드를 수정하여 재제출할 수 있으며, 재제출한 코드를 기준으로 다시 평가가 이루어집니다. 따라서 최종 평가를 기다리는 동안에도 원하는 경우 코드를 수정하여 다시 제출하실 수 있습니다. 최종 평가는 제출된 코드 기준으로 진행되며, 평가 항목은 코드 리뷰 내 5가지 항목에 따라 이루어집니다.\n\n감사합니다."
+    },
+    "word_overlap": 0.175
+  },
+  {
+    "idx": 2,
+    "id": 25,
+    "title": "streamlit 서비스 개발 강의 중 실습 실행이 안됩니다. --> [정정] 재실행 시 정상 실행됩니다.",
+    "content": "환경의 문제인지는 잘 모르겠지만 오후까지 안되다가\n\n지금은 정상적으로 동작합니다.\n\n아래 내용 답변 안 주셔도 됩니다.\n\n---------------------------------------\n\n[실습] LangChain과 Streamlit으로 구현하는 AI 토론 코드를 실행시키면 아래와 같은 메시지가 나옵니다.\n\n어떻게 처리해야 하는지 알려주세요",
+    "actual_answer": "안녕하세요.\n\n최근 배포 시 streamlit 실행 경로 변경으로 인해 가상환경이 작동하지 않은 것 같습니다.\n\n수정 배포 완료했습니다. 이후 에러 발생 시 말씀부탁드립니다.",
+    "label": "UNCATEGORIZED",
+    "confidence": "medium",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "문의 내용은 실습 실행 문제에 대한 질문이었으나, 현재는 정상 작동한다고 하여 불명확성이 존재함.",
+    "strategy": "no_response",
+    "mode_a": null,
+    "mode_b": null
+  },
+  {
+    "idx": 3,
+    "id": 13,
+    "title": "console 접근/python script 실행이 안됩니다.",
+    "content": "위와 같은 에러가 나오면서 파일 실행이 안됩니다.\n\n모든 파이썬 코드 작성 부분에서 동일한 에러가 나옵니다.",
+    "actual_answer": "안녕하세요 조치 완료했습니다.",
+    "label": "PLATFORM_SYSTEM_ERROR",
+    "confidence": "very_high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "플랫폼 시스템 자체의 장애로 콘솔 접근이 불가능하다는 명확한 언급이 있다.",
+    "strategy": "no_response",
+    "mode_a": null,
+    "mode_b": null
+  },
+  {
+    "idx": 4,
+    "id": 113,
+    "title": "[실습/인증] AI Literacy 인증시험 사전 연습 추가횟수 문의",
+    "content": "3/18 에 인증시험 신청을 했는데 사전연습을 할 수가 없습니다.\n\n언제 추가횟수 부여되는지 문의드립니다.",
+    "actual_answer": "안녕하세요\n\n인증시험 응시자 명단 확정 후 전달받아 업데이트가 됩니다.\n\n안내메일 발송 후 추가횟수 처리가 완료됩니다.",
+    "label": "ACCOUNT_ACTION_REQUIRED",
+    "confidence": "high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "사용자의 인증시험 사전연습 추가횟수 부여가 필요한 문의로, 운영자의 조치가 필요함.",
+    "strategy": "no_response",
+    "mode_a": null,
+    "mode_b": null
+  },
+  {
+    "idx": 5,
+    "id": 47,
+    "title": "마이프로필에 이수이력 갱신 여부 문의",
+    "content": "안녕하세요\n\n마이 프로필에 있는 이수이력 갱신은 언제쯤 되는 건지 궁금합니다.\n\nMaster 수료 완료한 상태인데, 리터러시와 Master 단계가 진행중으로 표시되서 문의 드립니다.",
+    "actual_answer": "안녕하세요\n\n리터러시의 경우 인증시험 이력을 통해 수료 여부를 확인 가능하며 이수 이력 내 표시는 인증과는 무관합니다.\n\n마스터프로젝트 수료 여부는 이메일을 통해 별도 안내되고 있으며 사내 시스템 내 반영된 상태입니다. 플랫폼내 확인은 2026년 기수 결과 발표 시점 시 업데이트 예정입니다.",
+    "label": "ACCOUNT_ACTION_REQUIRED",
+    "confidence": "very_high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "이수 이력 갱신은 운영자가 직접 계정을 수정해야 하는 문제로 보임.",
+    "strategy": "no_response",
+    "mode_a": null,
+    "mode_b": null
+  },
+  {
+    "idx": 6,
+    "id": 43,
+    "title": "sqlite문의",
+    "content": "sqlite 파일 이름을 계속 바꾸어 테스트를 하여도 계속 락이 걸렷다는 메세지가 뜨는 이유는 뭔가요?",
+    "actual_answer": "안녕하세요\n\nsqlite는 파일db로 트랜잭션 종료시까지 lock이 걸려 다른 작업 중 동시에 write 요청 시 락이 걸리며 작업이 정상적으로 이루어지지 않습니다.\n\n다만 현재 정확한 상황과 코드, 에러메시지가 없어 해결드리기가 어렵습니다. 또한 sqlite는 AI Bootcamp 학습범위와 무관해 공식문서 등을 참고해 작업 부탁드립니다.",
+    "label": "UNCATEGORIZED",
+    "confidence": "low",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "문의 내용이 불명확하며, 어떤 플랫폼이나 과정과 관련된 문제인지 확인할 수 없음.",
+    "strategy": "no_response",
+    "mode_a": null,
+    "mode_b": null
+  },
+  {
+    "idx": 7,
+    "id": 40,
+    "title": "AI Literacy 실습 및 인증 시험 ",
+    "content": "안녕하세요?\n\n1. AI Literacy 실습\n\n - 클릭 후 화면이 안나와서 리프레시 몇번했더니 연습 회수가 3번정도 사라졌습니다 가능하면 원복 부탁드립니다\n\n2.  AI Literacy 인증 시험 활성화\n\n - 연습횟수 완료 후 인증 시험 버튼 활성화가 되지않아서,\n\n    Collage에서 수강신청 후에도 인증 시험이 활성화가 되지 않는데 다른 절차가 있는지 문의드립니다",
+    "actual_answer": "안녕하세요.\n\n인증시험은 신청 후 시험 당일 오픈됩니다. 자세한 내용은 AX College 내 공지 참조 부탁드립니다. 신청한 인증시험 일정에 맞춰 안내메일이 발송될 예정입니다.\n\n또한 인증시험 신청자 대상으로 안내 이후 추가 실습 횟수가 부여됩니다.",
+    "label": "ACCOUNT_ACTION_REQUIRED",
+    "confidence": "high",
+    "is_compound": true,
+    "sub_labels": [
+      "ACCOUNT_ACTION_REQUIRED",
+      "SUBMISSION_POLICY"
+    ],
+    "rationale": "인증 시험 버튼 활성화 및 실습 회수 복원을 위해 운영자 개입이 필요함.",
+    "strategy_base": "human_review",
+    "mode_a": {
+      "strategy": "human_review",
+      "rag_score": 0.804,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\n1. AI Literacy 실습 관련하여, 클릭 후 화면이 나오지 않아 연습 회수가 감소한 부분에 대해 확인해 보겠습니다. 복구 처리를 위해 필요한 조치를 취하겠습니다.\n\n2. AI Literacy 인증 시험 버튼은 인증 시험 응시자 대상으로만 기간 내 활성화됩니다. Collage에서 수강신청하신 후에도 인증 시험이 활성화되지 않았다면, 해당 과정이 기준을 충족하고 있는지 확인해 드리겠습니다. \n\n확인 후 안내드리겠습니다. 감사합니다."
+    },
+    "mode_b": {
+      "strategy": "human_review",
+      "rag_score": 0.804,
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\n1. **AI Literacy 실습 복구 요청**  \n   다시 시도해 보시고 여전히 문제가 발생할 경우, 추가적인 정보를 확인 후 복구를 도와드리겠습니다.\n\n2. **AI Literacy 인증 시험 활성화 문의**  \n   인증 시험은 AX College 신청 기반으로 월 1회 시행됩니다. 시험의 버튼은 인증 시험 응시자 대상으로만 활성화되며, 시험 당일/시간에만 활성화됩니다. 연습횟수를 완료하신 후에도 버튼이 활성화되지 않았다면, 다른 절차가 필요하지는 않습니다. 문제 발생 시 자세한 상황을 확인 후 안내드리겠습니다.\n\n감사합니다."
+    },
+    "word_overlap": 0.25
+  },
+  {
+    "idx": 8,
+    "id": 29,
+    "title": "[AI Bootcamp] 다음 강의 수강 불가",
+    "content": "강의 완료 후 다음 강의 수강이 불가합니다.\n\n강의 수강 완료 후 완료된 강의 접속 시 처음부터 시작 됩니다.",
+    "actual_answer": "(실제 답변 없음)",
+    "label": "PLATFORM_SYSTEM_ERROR",
+    "confidence": "high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "강의 수강 완료 후 다음 강의에 대한 접근 문제로 시스템 오류로 판단됨.",
+    "strategy": "no_response",
+    "mode_a": null,
+    "mode_b": null
+  },
+  {
+    "idx": 9,
+    "id": 24,
+    "title": "3개의 강의를 완료하면 과제를 시작할 수 있다고 했는데 안되요",
+    "content": "3개의 강의를 완료하면 과제를 시작할 수 있습니다\n\n라고 되어있는데 3개 강의 모두 완료했는데 과제를 할 수 있게 활성화가 안되네요?\n\n다 들어야 되나요?",
+    "actual_answer": "안녕하세요\n최종 과제는 6개의 강의를 모두 수강완료해야 진행할 수 있습니다.",
+    "label": "ACCOUNT_ACTION_REQUIRED",
+    "confidence": "very_high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "과제가 활성화되지 않은 개인 계정의 문제로 운영자의 직접 조치가 필요함.",
+    "strategy": "no_response",
+    "mode_a": null,
+    "mode_b": null
+  },
+  {
+    "idx": 10,
+    "id": 123,
+    "title": "AI Literacy 인증 시험 불가",
+    "content": "안녕하세요.\n\nAI Literacy 인증 연습하기 시험은 되었는데, 인증시험은 활성화가 되지 않네요.\n\n방법 안내 부탁드립니다.\n\n감사합니다.",
+    "actual_answer": "안녕하세요.\n\n실습 관련 적용 완료했습니다.",
+    "label": "ACCOUNT_ACTION_REQUIRED",
+    "confidence": "very_high",
+    "is_compound": false,
+    "sub_labels": [],
+    "rationale": "인증시험 버튼 활성화에 대한 직접 조치가 필요한 문의로, 운영자의 개입이 요구됨.",
+    "strategy": "no_response",
+    "mode_a": null,
+    "mode_b": null
+  }
+]
