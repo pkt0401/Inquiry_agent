@@ -10,15 +10,13 @@
 
 ## 1. 데이터 현황
 
-| 항목 | Train | Test | 합계 |
-|------|------:|-----:|-----:|
-| 문의 수 | 84건 | 98건 | 182건 |
-| 댓글 수 | 90건 | 112건 | 202건 |
-| 운영자 답변 | 81건 | 97건 | 178건 |
-| 답변 완료 문의 | 82건 (97%) | 93건 (95%) | — |
+| 항목 | 전체 | 신규(3월) |
+|------|-----:|--------:|
+| 문의 수 | 110건 | 27건 |
+| 댓글 수 | 125건 | 31건 |
 
-> **Train**: inquiry.json + inquiry_comment.json (기존 스크랩)
-> **Test**: inquiry_test.json + inquiry_comment_test.json (C:/atl_scrape/inquiry_output 변환, inquiry_full.json → 동일 스키마)
+> **전체**: inquiry_all.json + inquiry_comment_all.json (기존 + 3월 신규 병합)
+> **신규(3월)**: test/inquiry_new.json + test/inquiry_comment_new.json (3월 최신 스크랩)
 
 ### 문의 유형 분포 (Train 84건 기준)
 
@@ -41,8 +39,9 @@
     │
     ▼
 [Step 1] LLM 분류  (GPT-4o-mini)
-    │  ↑ prior_knowledge (플랫폼 사전 지식) 주입
-    │  ↑ 라벨별 설명 + 실제 예시 제목 주입 (knowledge_base.json)
+    │  ↑ prior_knowledge (플랫폼 사전 지식) 주입 — knowledge_base.json
+    │  ↑ 라벨별 설명 + 실제 예시 제목 주입 — knowledge_base.json
+    │  ↑ 기수 일정·인증시험 일정 주입 — schedule.json (동적, 기수마다 갱신)
     │
     │  label       → 10개 카테고리 중 하나 (복합 시 우선순위 높은 라벨)
     │  confidence  → very_high / high / medium / low
@@ -121,16 +120,16 @@
 |------|------|----------|
 | ① | 문의 명확성 | 무엇을 묻는지 텍스트만 봐도 알 수 있는가? |
 | ② | 카테고리 단일성 | 10개 중 딱 하나에만 해당하는가? |
-| ③ | Agent 처리 가능성 | 시스템/계정 조치 없이 Agent가 해결 가능한가? |
-| ④ | 필요 정보 충분성 | 답변하기에 충분한 정보가 문의에 담겨 있는가? |
+| ③ | 필요 정보 충분성 | 답변하기에 충분한 정보가 문의에 담겨 있는가? |
+| ④ | KB/일정 정보 보유 | 사전 지식·운영 일정(schedule.json)만으로 답변 가능한가? |
 
 ### 레벨별 처리 방식
 
 | 레벨 | 충족 조건 | 처리 방식 |
 |------|----------|----------|
 | `very_high` | ①②③④ 모두 | `tool_rag` → 자동 게시 |
-| `high` | ①②③, ④ 일부 부족 | `tool_rag` → 자동 게시 |
-| `medium` | ①②, ③ 불확실 | `human_review` → 초안 + 운영자 검토 |
+| `high` | ①②④ 충족, ③ 일부 부족 | `tool_rag` → 자동 게시 |
+| `medium` | ①② 충족, ③ 또는 ④ 불확실 | `human_review` → 초안 + 운영자 검토 |
 | `low` | ① 또는 ② 미충족 | `no_response` → 에스컬레이션 |
 
 ### 혼동 잦은 라벨 쌍 구분 기준 (LLM 프롬프트에 명시)
@@ -178,24 +177,34 @@ is_draft = (strategy == 'human_review')  # [초안] 태그 부착 여부
 
 ## 6. 사전 지식 프롬프트 (Prior Knowledge)
 
-`knowledge_base.json`의 `prior_knowledge` 섹션을 **분류 프롬프트**와 **답변 생성 프롬프트** 양쪽에 동일하게 주입.
+`knowledge_base.json`의 `prior_knowledge` + `schedule.json`의 일정 정보를 **분류 프롬프트**와 **답변 생성 프롬프트** 양쪽에 동일하게 주입.
 
-### 포함 내용
+### Static — knowledge_base.json (거의 안 바뀌는 정보)
 
 | 항목 | 내용 |
 |------|------|
 | 플랫폼 소개 | AI Talent Lab: SK AX그룹 임직원 대상 AI 교육 플랫폼 |
-| 과정 구성 | AI Literacy (LV1, **상시 오픈**) / AI Bootcamp (LV2, 6개 모듈, **기수제 운영**) / AI Master Project (LV3) |
-| 최종과제 규정 | 강의 6개 완료 후 시작, 기획서+소스코드 각각 여러 번 제출 가능 |
+| 과정 구성 | AI Literacy (LV1, **상시 오픈**, VOD 6.5h) / AI Bootcamp (LV2, 6개 모듈, **기수제**, 4주 온라인) / AI Master Project (LV3) |
+| 최종과제 규정 | 강의 6개 완료 후 시작, AI Agent 제작, 기획서+소스코드 각각 여러 번 제출, 마지막 제출 코드 기준 평가 |
 | 인증 버튼 | 응시 대상자 + 응시 기간 중에만 활성화 → 비활성이 정상인 경우 있음 |
 | IDE 정책 | 웹 기반 IDE 제공, 직접 venv 생성 비권장 (속도 저하·로딩 문제) |
-| 결과 발표 | 수강 기간 종료 후 약 2주 뒤 이메일/Slack 안내 |
 | 수료 관계 | AI Bootcamp 수료 시 AI Literacy 동시 수료 처리 |
+| 재수강 | 이전 기수 수강 이력과 무관하게 새 기수 재참여 가능 |
+
+### Dynamic — schedule.json (기수마다 갱신)
+
+| 항목 | 내용 |
+|------|------|
+| Bootcamp 현재 기수 | 12기 수강 기간, 과제 제출 마감, 결과 발표 예정일 |
+| Bootcamp 예정 기수 | 3차·4차 신청 기간·수강 기간·모집 상태 |
+| AI Literacy | 상시 운영 기간 (2026-01-01~12-31) |
+| 인증시험 | 7차 시험일 (2026-03-18), 신청 기간, 응시 방법 |
 
 ### 효과
 
 - 분류 시: "인증 버튼 비활성화 = 정상일 수 있음"을 LLM이 알고 ACCOUNT_ACTION_REQUIRED로 정확 분류
-- 답변 시: KB 정보가 없어도 prior_knowledge만으로 정확한 답변 생성 가능
+- 답변 시: 일정 관련 질문(다음 기수 언제, 신청 가능 여부)에 schedule.json으로 정확 답변
+- 기수 변경 시 schedule.json만 수정 → knowledge_base.json 변경 불필요
 
 ---
 
@@ -244,20 +253,15 @@ history 문의에 휴리스틱 라벨(9개 regex)을 부여하는데, 어떤 패
 
 | 출처 | 문서 수 | label 여부 |
 |------|--------:|-----------|
-| KB 큐레이션 Q&A (knowledge_base.json) | 26건 | 항상 있음 |
+| KB 큐레이션 Q&A (knowledge_base.json) | ~30건 | 항상 있음 |
 | 에러 솔루션 (knowledge_base.json) | 5건 | CODE_LOGIC_ERROR 고정 |
-| Train/Test history (운영자 답변 있는 것) | ~178건 | 휴리스틱 라벨 (~90건) + None (~88건) |
-| **합계** | **~209건** | |
+| history (inquiry_all.json 기반, 운영자 답변 있는 것) | ~205건 | 휴리스틱 라벨 + None |
+| **합계** | **~240건** | |
 
 ### Heuristic Pre-labeling (history용)
 
-Train + Test history 총 182건에 대해, LLM 호출 없이 정규식 패턴으로 사전 라벨 부여.
+inquiry_all.json 110건에 대해, LLM 호출 없이 정규식 패턴으로 사전 라벨 부여.
 FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
-
-| 결과 | 건수 |
-|------|-----:|
-| 라벨 부여 완료 | ~90건 |
-| 미분류 (None → 보조 결과로만 활용) | ~92건 |
 
 ---
 
@@ -267,8 +271,9 @@ FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
 
 | Context | 내용 | 사용 Label |
 |---------|------|-----------|
-| 사전 지식 (prior_knowledge) | 플랫폼·과정·규정 핵심 사실 | 전체 (분류+답변 프롬프트 공통 주입) |
-| FAISS 벡터 검색 | KB 큐레이션 Q&A + 에러 솔루션 + history (~209건) — OpenAI text-embedding-3-small | 해당 Group 2 label |
+| 사전 지식 (prior_knowledge) | 플랫폼·과정·규정 핵심 사실 — knowledge_base.json | 전체 (분류+답변 프롬프트 공통 주입) |
+| 운영 일정 (schedule) | 기수 일정·인증시험 일정 — schedule.json (동적) | 전체 (분류+답변 프롬프트 공통 주입) |
+| FAISS 벡터 검색 | KB 큐레이션 Q&A + 에러 솔루션 + history (~240건) — OpenAI text-embedding-3-small | 해당 Group 2 label |
 | 에러 솔루션 정규식 | API 키, 패키지, 코드 에러 해결법 | `CODE_LOGIC_ERROR` 보완 |
 
 ### Tier 2 — 실시간 조회 (DB 연동 필요, 미구현)
@@ -299,11 +304,12 @@ FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
 | 파일 | 설명 |
 |------|------|
 | `inquiry_agent.py` | 메인 Agent (분류·RAG·답변 생성) |
-| `knowledge_base.json` | 사전 지식 + 큐레이션 Q&A + 에러 솔루션 |
-| `inquiry.json` / `inquiry_comment.json` | Train 데이터 (84건 문의 / 90건 댓글) |
-| `inquiry_test.json` / `inquiry_comment_test.json` | Test 데이터 (98건 / 112건) |
-| `test.json` | 18개 테스트 케이스 (중복 제거, 7개 label 커버) |
-| `compare_rag_modes.py` | Mode A vs B 검색 예시 + 답변 비교 스크립트 |
+| `knowledge_base.json` | 사전 지식 + 큐레이션 Q&A + 에러 솔루션 (static) |
+| `schedule.json` | 기수별 수강 일정 + 인증시험 일정 (dynamic, 기수마다 갱신) |
+| `inquiry_all.json` | 전체 문의 게시물 (110건, 기존+3월 신규 병합) |
+| `inquiry_comment_all.json` | 전체 문의 댓글 (125건) |
+| `test/inquiry_new.json` | 3월 신규 문의 원본 (27건) |
+| `compare_rag_modes.py` | Mode A vs B 비교 스크립트 (random_state 샘플링) |
 | `pipeline_viz.html` | 전체 파이프라인 시각화 (브라우저에서 열기) |
 | `embeddings_cache.pkl` | 임베딩 캐시 (재실행 시 API 미호출) |
 | `requirements.txt` | `openai>=1.0.0`, `faiss-cpu==1.7.4`, `numpy>=1.24.0,<2` |

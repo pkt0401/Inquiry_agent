@@ -329,12 +329,12 @@
           <span style="color:#aaa;">하나의 카테고리로 명확히 분류 가능한가 (UNCATEGORIZED 아님)</span>
         </div>
         <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
-          <span style="color:#9fb8f5; font-weight:700;">③ Agent처리가능성</span><br>
-          <span style="color:#aaa;">RAG·KB로 Agent가 처리 가능한 영역인가 (Group 2 라벨)</span>
+          <span style="color:#9fb8f5; font-weight:700;">③ 필요정보충분성</span><br>
+          <span style="color:#aaa;">답변하기에 충분한 정보가 문의에 담겨 있는가</span>
         </div>
         <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
-          <span style="color:#9fb8f5; font-weight:700;">④ 정보충분성</span><br>
-          <span style="color:#aaa;">RAG 검색·답변 생성에 충분한 맥락 정보가 포함되어 있는가</span>
+          <span style="color:#9fb8f5; font-weight:700;">④ KB/일정정보보유</span><br>
+          <span style="color:#aaa;">사전 지식·운영 일정(schedule.json)만으로 답변 가능한가</span>
         </div>
       </div>
 
@@ -345,8 +345,8 @@
             <th>충족 조건</th>
             <th>① 명확성</th>
             <th>② 단일성</th>
-            <th>③ Agent처리</th>
-            <th>④ 정보충분</th>
+            <th>③ 필요정보충분</th>
+            <th>④ KB/일정정보</th>
           </tr>
         </thead>
         <tbody>
@@ -358,15 +358,15 @@
           </tr>
           <tr>
             <td><span class="level-pill lp-hi">high</span></td>
-            <td>①②③ 충족, ④ 일부 부족</td>
+            <td>①②④ 충족, ③ 일부 부족</td>
             <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-            <td style="text-align:center;">✅</td><td style="text-align:center;">⚠️</td>
+            <td style="text-align:center;">⚠️</td><td style="text-align:center;">✅</td>
           </tr>
           <tr>
             <td><span class="level-pill lp-me">medium</span></td>
-            <td>①② 충족, ③ 불확실</td>
+            <td>①② 충족, ③ 또는 ④ 불확실</td>
             <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-            <td style="text-align:center;">❓</td><td style="text-align:center;">—</td>
+            <td style="text-align:center;">❓</td><td style="text-align:center;">❓</td>
           </tr>
           <tr>
             <td><span class="level-pill lp-lo">low</span></td>
@@ -509,10 +509,10 @@
     </div>
 
     <div style="margin-top:14px;">
-      <div style="font-size:0.75rem; color:#4ade80; font-weight:600; margin-bottom:8px;">FAISS 인덱스 구성 (~209건)</div>
+      <div style="font-size:0.75rem; color:#4ade80; font-weight:600; margin-bottom:8px;">FAISS 인덱스 구성 (~240건)</div>
       <div class="rag-index">
         <div class="idx-card">
-          <span class="idx-num">26건</span>
+          <span class="idx-num">~30건</span>
           KB 큐레이션 Q&amp;A<br>
           <span style="color:#6ab88a;">항상 label 있음</span>
         </div>
@@ -522,9 +522,9 @@
           <span style="color:#6ab88a;">CODE_LOGIC_ERROR</span>
         </div>
         <div class="idx-card">
-          <span class="idx-num">~178건</span>
+          <span class="idx-num">~205건</span>
           History (운영자 답변↔)<br>
-          <span style="color:#6ab88a;">휴리스틱 라벨 ~90 + None ~88</span>
+          <span style="color:#6ab88a;">inquiry_all.json 110건 기반</span>
         </div>
       </div>
     </div>
