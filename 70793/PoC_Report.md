@@ -38,7 +38,7 @@
 문의 입력 (title + content, HTML → 텍스트 변환)
     │
     ▼
-[Step 1] LLM 분류  (GPT-4o-mini)
+[Step 1] LLM 분류  (Azure gpt-5.2)
     │  ↑ prior_knowledge (플랫폼 사전 지식) 주입 — knowledge_base.json
     │  ↑ 라벨별 설명 + 실제 예시 제목 주입 — knowledge_base.json
     │  ↑ 기수 일정·인증시험 일정 주입 — schedule.json (동적, 기수마다 갱신)
@@ -214,7 +214,7 @@ is_draft = (strategy == 'human_review')  # [초안] 태그 부착 여부
 
 | 항목 | 내용 |
 |------|------|
-| 임베딩 모델 | OpenAI `text-embedding-3-small` (1536차원) |
+| 임베딩 모델 | Azure `text-embedding-3-large` (3072차원, endpoint 01) |
 | 인덱스 | FAISS `IndexFlatIP` (코사인 유사도, L2 정규화 후 inner product) |
 | 캐시 | `embeddings_cache.pkl` — 재실행 시 API 미호출 |
 | 검색 방식 | **label-aware** (기본): 동일 label 우선, label=None 보조<br>**similarity-only** (비교용): label 무시, 순수 유사도 상위 반환 |
@@ -271,9 +271,9 @@ FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
 
 | Context | 내용 | 사용 Label |
 |---------|------|-----------|
-| 사전 지식 (prior_knowledge) | 플랫폼·과정·규정 핵심 사실 — knowledge_base.json | 전체 (분류+답변 프롬프트 공통 주입) |
+| 사전 지식 (prior_knowledge) | 플랫폼·과정·규정 핵심 사실 — knowledge_base.json (인증시험 실습횟수, 이수이력 갱신 정책 포함) | 전체 (분류+답변 프롬프트 공통 주입) |
 | 운영 일정 (schedule) | 기수 일정·인증시험 일정 — schedule.json (동적) | 전체 (분류+답변 프롬프트 공통 주입) |
-| FAISS 벡터 검색 | KB 큐레이션 Q&A + 에러 솔루션 + history (~240건) — OpenAI text-embedding-3-small | 해당 Group 2 label |
+| FAISS 벡터 검색 | KB 큐레이션 Q&A + 에러 솔루션 + history (~240건) — Azure text-embedding-3-large (3072차원)<br>※ inquiry_all.json과 겹치는 qa_examples 제거 (leakage 방지) | 해당 Group 2 label |
 | 에러 솔루션 정규식 | API 키, 패키지, 코드 에러 해결법 | `CODE_LOGIC_ERROR` 보완 |
 
 ### Tier 2 — 실시간 조회 (DB 연동 필요, 미구현)
@@ -320,7 +320,7 @@ FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
 
 | Phase | 내용 |
 |-------|------|
-| ~~Phase 2~~ | ~~Vector DB 구축~~ → **완료** (FAISS + OpenAI text-embedding-3-small, embeddings_cache.pkl 캐시) |
+| ~~Phase 2~~ | ~~Vector DB 구축~~ → **완료** (FAISS + Azure text-embedding-3-large 3072차원, embeddings_cache.pkl 캐시) |
 | **Phase 3** | DB 연동 — 사용자 수강 정보·과제 이력 실시간 조회 |
 | **Phase 4** | Vision API 연동 — 에러 스크린샷 자동 분석 |
 | **Phase 5** | 운영자 대시보드 — `human_review` 초안 검토·게시 UI |

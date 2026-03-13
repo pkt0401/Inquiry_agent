@@ -266,7 +266,7 @@
 
   <!-- STEP 1: LLM 분류 -->
   <div class="box theme-llm">
-    <div class="box-label">Step 1 &nbsp;&middot;&nbsp; GPT-4o-mini</div>
+    <div class="box-label">Step 1 &nbsp;&middot;&nbsp; Azure gpt-5.2 (endpoint 02)</div>
     <div class="box-title">LLM 분류</div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -475,7 +475,7 @@
     <div class="rag-grid">
       <div class="rag-item">
         <span class="rag-num">① FAISS 벡터 검색</span><br>
-        OpenAI <code>text-embedding-3-small</code> (1536차원)<br>
+        Azure <code>text-embedding-3-large</code> (3072차원, endpoint 01)<br>
         코사인 유사도, top_k&times;6 후보 &rarr; 상위 3개 선택<br>
         <span style="color:#6ab88a; font-size:0.73rem; margin-top:4px; display:block;">
           동일 label 문서 우선 &rarr; label=None 보조<br>
@@ -512,9 +512,9 @@
       <div style="font-size:0.75rem; color:#4ade80; font-weight:600; margin-bottom:8px;">FAISS 인덱스 구성 (~240건)</div>
       <div class="rag-index">
         <div class="idx-card">
-          <span class="idx-num">~30건</span>
+          <span class="idx-num">~20건</span>
           KB 큐레이션 Q&amp;A<br>
-          <span style="color:#6ab88a;">항상 label 있음</span>
+          <span style="color:#6ab88a;">항상 label 있음<br>inquiry_all.json 중복 제거</span>
         </div>
         <div class="idx-card">
           <span class="idx-num">5건</span>
@@ -534,7 +534,7 @@
 
   <!-- STEP 4: 답변 생성 -->
   <div class="box theme-answer">
-    <div class="box-label">Step 4 &nbsp;&middot;&nbsp; GPT-4o-mini</div>
+    <div class="box-label">Step 4 &nbsp;&middot;&nbsp; Azure gpt-5.2 (endpoint 02)</div>
     <div class="box-title">답변 생성</div>
 
     <div class="output-grid">
@@ -571,7 +571,7 @@
   <div class="legend-item"><div class="legend-dot" style="background:#c09010;"></div> human_review (초안 + 검토)</div>
   <div class="legend-item"><div class="legend-dot" style="background:#27ae60;"></div> tool_rag (자동 게시)</div>
   <div class="legend-item"><div class="legend-dot" style="background:#9b59b6;"></div> 복합 문의 (신규)</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#4f6aad;"></div> LLM (GPT-4o-mini)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4f6aad;"></div> LLM (Azure gpt-5.2)</div>
   <div class="legend-item"><div class="legend-dot" style="background:#2d6a4f;"></div> RAG / FAISS</div>
 </div>
 

@@ -26,7 +26,7 @@ from html.parser import HTMLParser
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
-from openai import OpenAI
+from openai import AzureOpenAI
 from dotenv import load_dotenv
 load_dotenv()
 # ──────────────────────────────────────────────────────────────────
@@ -154,10 +154,10 @@ class AgentResponse:
 # ──────────────────────────────────────────────────────────────────
 
 class VectorStore:
-    EMBED_MODEL = "text-embedding-3-small"
-    EMBED_DIM   = 1536  # text-embedding-3-small 기본 차원
+    EMBED_MODEL = "text-embedding-3-large"
+    EMBED_DIM   = 3072  # text-embedding-3-large 기본 차원
 
-    def __init__(self, openai_client: OpenAI, cache_path: str = None):
+    def __init__(self, openai_client: AzureOpenAI, cache_path: str = None):
         self._client    = openai_client
         self._cache_path = cache_path
         self._emb_cache: Dict[str, List[float]] = self._load_cache()
@@ -284,14 +284,23 @@ class VectorStore:
 # ──────────────────────────────────────────────────────────────────
 
 class InquiryAgent:
-    ADMIN_IDS = {2, 7, 61, 442, 2425}
+    ADMIN_IDS = {2, 7, 61, 442, 2425, 3417}
 
-    def __init__(self, knowledge_base_path: str = None, api_key: str = None):
+    def __init__(self, knowledge_base_path: str = None):
         self.kb       = self._load_knowledge_base(knowledge_base_path)
         self.schedule = self._load_schedule()
         self.inquiry_history: List[Dict] = []
-        self._client = OpenAI(
-            api_key=api_key or os.environ.get("OPENAI_API_KEY"),
+        # Chat 클라이언트 — Azure OpenAI 02 (gpt-5.2)
+        self._client = AzureOpenAI(
+            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
+            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+            api_version="2024-12-01-preview",
+        )
+        # Embedding 클라이언트 — Azure OpenAI 01 (text-embedding-3-large)
+        self._embed_client = AzureOpenAI(
+            api_key=os.environ.get("AZURE_OPENAI_EMBED_API_KEY"),
+            azure_endpoint=os.environ.get("AZURE_OPENAI_EMBED_ENDPOINT"),
+            api_version="2024-12-01-preview",
         )
         self.vector_store: Optional[VectorStore] = None
 
@@ -536,8 +545,8 @@ class InquiryAgent:
 
         try:
             response = self._client.chat.completions.create(
-                model="gpt-4o-mini",
-                max_tokens=300,
+                model=os.environ.get("AZURE_CHAT_DEPLOYMENT", "gpt-5.2"),
+                max_completion_tokens=300,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user",   "content": user_content},
@@ -710,8 +719,8 @@ class InquiryAgent:
 
         try:
             response = self._client.chat.completions.create(
-                model="gpt-4o-mini",
-                max_tokens=1024,
+                model=os.environ.get("AZURE_CHAT_DEPLOYMENT", "gpt-5.2"),
+                max_completion_tokens=1024,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user",   "content": user_content},
@@ -847,7 +856,7 @@ class InquiryAgent:
         """
         base = os.path.dirname(os.path.abspath(__file__))
         cache_path = os.path.join(base, "embeddings_cache.pkl")
-        vs = VectorStore(self._client, cache_path=cache_path)
+        vs = VectorStore(self._embed_client, cache_path=cache_path)
 
         # ① KB 큐레이션 Q&A
         for label_key, info in self.kb.get("label_examples", {}).items():
@@ -973,14 +982,12 @@ def main():
 
     _load_dotenv()
 
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        print("[오류] OPENAI_API_KEY 환경변수가 설정되지 않았습니다.")
-        print("  70793/.env 파일에 아래 항목을 입력하세요:")
-        print("    OPENAI_API_KEY=<your-key>")
+    if not os.environ.get("AZURE_OPENAI_API_KEY") or not os.environ.get("AZURE_OPENAI_EMBED_API_KEY"):
+        print("[오류] AZURE_OPENAI_API_KEY 또는 AZURE_OPENAI_EMBED_API_KEY 환경변수가 없습니다.")
+        print("  .env 파일을 확인하세요.")
         return
 
-    agent = InquiryAgent(api_key=api_key)
+    agent = InquiryAgent()
 
     base_path = os.path.dirname(os.path.abspath(__file__))
 

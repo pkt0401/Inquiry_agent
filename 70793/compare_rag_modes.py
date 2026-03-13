@@ -33,7 +33,7 @@ from inquiry_agent import (
     html_to_text, Strategy, RAG_CONFIDENCE_THRESHOLD,
 )
 
-ADMIN_IDS = {2, 7, 61, 442, 2425}
+ADMIN_IDS = {2, 7, 61, 442, 2425, 3417}
 
 N_CASES      = int(sys.argv[1]) if len(sys.argv) > 1 else 10
 RANDOM_STATE = int(sys.argv[2]) if len(sys.argv) > 2 else 42
@@ -53,9 +53,8 @@ def build_actual_answer_map(comments: list) -> dict:
 def load_agent(test_ids: set):
     """test_ids를 받아 RAG 인덱스에서 해당 케이스를 제외한 agent 반환."""
     _load_dotenv()
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        print("[오류] OPENAI_API_KEY 환경변수가 없습니다.")
+    if not os.environ.get("AZURE_OPENAI_API_KEY") or not os.environ.get("AZURE_OPENAI_EMBED_API_KEY"):
+        print("[오류] AZURE_OPENAI_API_KEY 또는 AZURE_OPENAI_EMBED_API_KEY 환경변수가 없습니다.")
         sys.exit(1)
 
     all_inquiries = load_json_file(os.path.join(BASE, "inquiry_all.json"))
@@ -66,7 +65,7 @@ def load_agent(test_ids: set):
     train_comments  = [x for x in all_comments  if x.get("inquiry_id") not in test_ids]
 
     actual_answer_map = build_actual_answer_map(all_comments)
-    agent = InquiryAgent(api_key=api_key)
+    agent = InquiryAgent()
     agent.load_inquiry_history(train_inquiries, train_comments, pre_label=True)
     print(f"RAG 인덱스: {len(train_inquiries)}건 (테스트 {len(test_ids)}건 제외)")
     return agent, actual_answer_map
