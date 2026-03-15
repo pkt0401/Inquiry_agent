@@ -123,7 +123,7 @@ def compare_one(agent: InquiryAgent, case: dict, idx: int, actual_answer_map: di
 
     # ── Mode B: similarity-only ────────────────────────────────────
     ctx_b, score_b = agent._build_kb_context(label, inquiry_text, similarity_only=True)
-    hits_b = agent.vector_store.search(inquiry_text, label=label.value, top_k=3, similarity_only=True)
+    hits_b = agent.vector_store.search(inquiry_text, label=label.value, top_k=5, similarity_only=True)
 
     # 검색 예시 비교
     print()

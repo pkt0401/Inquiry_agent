@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS enrollments (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id     INTEGER NOT NULL,
     cohort_id   INTEGER NOT NULL,
-    status      TEXT NOT NULL,   -- 'completed' | 'failed' | 'in_progress' | 'dropped'
+    status      TEXT NOT NULL,   -- 'completed' | 'failed' | 'in_progress'
     final_score REAL,
     note        TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id),
@@ -54,7 +54,6 @@ STATUS_KO = {
     "completed":   "수료",
     "failed":      "미수료",
     "in_progress": "진행중",
-    "dropped":     "중도탈락",
 }
 
 

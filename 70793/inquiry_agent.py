@@ -18,6 +18,7 @@ RAG:
 import json
 import re
 import os
+import random
 import hashlib
 import pickle
 import numpy as np
@@ -624,7 +625,7 @@ class InquiryAgent:
 
         # ① FAISS 벡터 검색
         if self.vector_store and self.vector_store.index:
-            hits = self.vector_store.search(inquiry_text, label=label.value, top_k=3,
+            hits = self.vector_store.search(inquiry_text, label=label.value, top_k=5,
                                             similarity_only=similarity_only)
             for hit in hits:
                 max_score = max(max_score, hit.get("score", 0.0))
@@ -782,16 +783,16 @@ class InquiryAgent:
             if len(valid_sub) >= 2 and all(sl in GROUP2 for sl in valid_sub):
                 ctx_parts, scores = [], []
                 for sub_lbl in valid_sub:
-                    ctx, score = self._build_kb_context(sub_lbl, inquiry_text)
+                    ctx, score = self._build_kb_context(sub_lbl, inquiry_text, similarity_only=True)
                     ctx_parts.append(f"[{sub_lbl.value} 관련]\n{ctx}")
                     scores.append(score)
                 kb_context = "\n\n---\n\n".join(ctx_parts)
                 max_rag_score = min(scores)   # 가장 낮은 score 기준으로 다운그레이드 판단
                 compound_labels_for_rag = valid_sub
             else:
-                kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text)
+                kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text, similarity_only=True)
         else:
-            kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text)
+            kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text, similarity_only=True)
 
         # RAG 유사도가 낮으면 human_review로 다운그레이드 (tool_rag인 경우에만)
         if strategy == Strategy.TOOL_RAG and max_rag_score < RAG_CONFIDENCE_THRESHOLD:
@@ -991,31 +992,60 @@ def _load_dotenv():
             break
 
 
+def _word_overlap(a: str, b: str) -> float:
+    """두 텍스트의 단어 집합 overlap 비율 (Jaccard)."""
+    wa = set(a.split())
+    wb = set(b.split())
+    if not wa or not wb:
+        return 0.0
+    return len(wa & wb) / len(wa | wb)
+
+
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="AI Talent Lab 문의 Agent PoC")
+    parser.add_argument("--n-test",       type=int, default=10,  help="테스트케이스 수 (기본 10)")
+    parser.add_argument("--random-state", type=int, default=42,  help="랜덤 시드 (기본 42)")
+    args = parser.parse_args()
+
     print("=== AI Talent Lab 문의 Agent PoC ===\n")
+    print(f"random_state={args.random_state}  n_test={args.n_test}\n")
 
     _load_dotenv()
 
     if not os.environ.get("AZURE_OPENAI_API_KEY") or not os.environ.get("AZURE_OPENAI_EMBED_API_KEY"):
         print("[오류] AZURE_OPENAI_API_KEY 또는 AZURE_OPENAI_EMBED_API_KEY 환경변수가 없습니다.")
-        print("  .env 파일을 확인하세요.")
         return
 
     agent = InquiryAgent()
 
     base_path = os.path.dirname(os.path.abspath(__file__))
 
-    # 통합 데이터 로드 (inquiry_all.json = inquiry.json + inquiry_test.json 중복제거 후 정렬)
     all_inquiries = load_json_file(os.path.join(base_path, 'inquiry_all.json'))
     all_comments  = load_json_file(os.path.join(base_path, 'inquiry_comment_all.json'))
     print(f"통합 문의 데이터: {len(all_inquiries)}건 / 댓글: {len(all_comments)}건")
 
-    agent.load_inquiry_history(all_inquiries, all_comments, pre_label=True)
-    print(f"총 history 로드: {len(agent.inquiry_history)}건 (라벨 사전 부여 완료)\n")
-    print("Agent 준비 완료\n")
+    # 관리자 답변이 있는 문의만 테스트 대상으로 추출 (비교 가능한 것만)
+    admin_ids = agent.ADMIN_IDS
+    comment_map: Dict[int, List[Dict]] = {}
+    for c in all_comments:
+        if c.get('author_id') in admin_ids:
+            comment_map.setdefault(c['inquiry_id'], []).append(c)
 
-    # 테스트 케이스
-    test_cases = load_json_file(os.path.join(base_path, 'test_personalized.json'))
+    has_answer = [inq for inq in all_inquiries if inq['id'] in comment_map]
+
+    rng = random.Random(args.random_state)
+    n = min(args.n_test, len(has_answer))
+    test_cases = rng.sample(has_answer, n)
+    test_ids   = {inq['id'] for inq in test_cases}
+
+    # 테스트셋을 제외한 나머지를 RAG pool로 사용
+    rag_pool = [inq for inq in all_inquiries if inq['id'] not in test_ids]
+    print(f"테스트셋: {len(test_cases)}건 / RAG pool: {len(rag_pool)}건")
+
+    agent.load_inquiry_history(rag_pool, all_comments, pre_label=False)
+    print(f"RAG history 로드: {len(agent.inquiry_history)}건\n")
+    print("Agent 준비 완료\n")
 
     strategy_labels = {
         Strategy.NO_RESPONSE:  "운영자 에스컬레이션",
@@ -1024,16 +1054,18 @@ def main():
     }
 
     for i, test_inquiry in enumerate(test_cases, 1):
-        if i == 11:
-            break
         title   = test_inquiry.get('title', '')
         content = agent._strip_html(test_inquiry.get('content', ''))
         content_preview = content[:200].replace('\n', ' ').strip()
 
         personal_ctx = agent.user_db.build_personal_context_str(test_inquiry.get('author_id'))
 
+        # 실제 관리자 답변
+        actual_answers = comment_map.get(test_inquiry['id'], [])
+        actual_text    = agent._strip_html(actual_answers[0].get('content', '')) if actual_answers else ''
+
         print(f"\n{'='*60}")
-        print(f"테스트 {i}: {title}")
+        print(f"테스트 {i}/{len(test_cases)}: {title}")
         print(f"{'='*60}")
         print(f"[제목]   {title}")
         print(f"[내용]   {content_preview}{'...' if len(content) > 200 else ''}")
@@ -1062,6 +1094,12 @@ def main():
 
         if response.answer:
             print(f"\n[생성된 답변]\n{response.answer}")
+
+        if actual_text:
+            print(f"\n[실제 관리자 답변]\n{actual_text[:400]}{'...' if len(actual_text) > 400 else ''}")
+            if response.answer:
+                overlap = _word_overlap(response.answer, actual_text)
+                print(f"\n[단어 overlap]  {overlap*100:.1f}%")
 
 
 if __name__ == "__main__":
