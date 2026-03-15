@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from openai import AzureOpenAI
 from dotenv import load_dotenv
+from user_db import UserContextDB
 load_dotenv()
 # ──────────────────────────────────────────────────────────────────
 # HTML 전처리
@@ -289,6 +290,7 @@ class InquiryAgent:
     def __init__(self, knowledge_base_path: str = None):
         self.kb       = self._load_knowledge_base(knowledge_base_path)
         self.schedule = self._load_schedule()
+        self.user_db  = UserContextDB()
         self.inquiry_history: List[Dict] = []
         # Chat 클라이언트 — Azure OpenAI 02 (gpt-5.2)
         self._client = AzureOpenAI(
@@ -476,7 +478,8 @@ class InquiryAgent:
 
     # ── Step 1: LLM 분류 ──────────────────────────────────────────
 
-    def _llm_classify(self, inquiry: Dict) -> LLMClassification:
+    def _llm_classify(self, inquiry: Dict,
+                      personal_context: str = "") -> LLMClassification:
         title   = inquiry.get('title', '')
         content = self._strip_html(inquiry.get('content', ''))
 
@@ -484,7 +487,9 @@ class InquiryAgent:
         schedule        = self._schedule_section()
         label_descs     = self._label_description_section()
 
-        system_prompt = f"""너는 AI Talent Lab 문의 분류 Agent야.
+        personal_section = f"\n{personal_context}\n" if personal_context else ""
+
+        system_prompt = f"""너는 AI Talent Lab 문의 분류 Agent야.{personal_section}
 문의를 읽고 아래 10개 카테고리 중 하나로 분류하고, 신뢰도를 판단해.
 
 {prior_knowledge}
@@ -671,8 +676,9 @@ class InquiryAgent:
         label: InquiryLabel,
         confidence: ConfidenceLevel,
         kb_context: str,
-        is_draft: bool = None,   # strategy 기반으로 외부에서 주입; None이면 confidence로 판단
-        compound_labels: List[InquiryLabel] = None,  # 복합 문의 시 각 sub_label 목록
+        is_draft: bool = None,
+        compound_labels: List[InquiryLabel] = None,
+        personal_context: str = "",
     ) -> str:
         title   = inquiry.get('title', '')
         content = self._strip_html(inquiry.get('content', ''))
@@ -695,9 +701,11 @@ class InquiryAgent:
         else:
             category_line = f"이 문의는 \"{label.value}\" 카테고리로 분류되었어."
 
+        personal_section = f"\n{personal_context}\n" if personal_context else ""
+
         system_prompt = f"""너는 AI Talent Lab 문의 답변 Agent야.
 {'※ 이 답변은 운영자 검토용 초안이야. [초안] 태그로 시작해.' if is_draft else ''}
-
+{personal_section}
 {prior_knowledge}
 
 {schedule}
@@ -737,8 +745,13 @@ class InquiryAgent:
         content = self._strip_html(inquiry.get('content', ''))
         inquiry_text = title + " " + content
 
+        # 개인 맥락 조회 (수강 이력)
+        personal_context = self.user_db.build_personal_context_str(
+            inquiry.get('author_id')
+        )
+
         # Step 1: LLM 분류
-        classification = self._llm_classify(inquiry)
+        classification = self._llm_classify(inquiry, personal_context=personal_context)
 
         # Step 2: Strategy 결정
         strategy, should_respond = self._determine_strategy(
@@ -793,6 +806,7 @@ class InquiryAgent:
             inquiry, classification.label, classification.confidence_level, kb_context,
             is_draft=(strategy == Strategy.HUMAN_REVIEW),
             compound_labels=compound_labels_for_rag,
+            personal_context=personal_context,
         )
 
         # history 기록 (label 저장)
@@ -1001,7 +1015,7 @@ def main():
     print("Agent 준비 완료\n")
 
     # 테스트 케이스
-    test_cases = load_json_file(os.path.join(base_path, 'test2.json'))
+    test_cases = load_json_file(os.path.join(base_path, 'test_personalized.json'))
 
     strategy_labels = {
         Strategy.NO_RESPONSE:  "운영자 에스컬레이션",
@@ -1010,11 +1024,13 @@ def main():
     }
 
     for i, test_inquiry in enumerate(test_cases, 1):
-        if i == 6:
+        if i == 11:
             break
         title   = test_inquiry.get('title', '')
         content = agent._strip_html(test_inquiry.get('content', ''))
         content_preview = content[:200].replace('\n', ' ').strip()
+
+        personal_ctx = agent.user_db.build_personal_context_str(test_inquiry.get('author_id'))
 
         print(f"\n{'='*60}")
         print(f"테스트 {i}: {title}")
@@ -1022,6 +1038,11 @@ def main():
         print(f"[제목]   {title}")
         print(f"[내용]   {content_preview}{'...' if len(content) > 200 else ''}")
         print(f"[날짜]   {test_inquiry.get('create_dt', '없음')}")
+        if personal_ctx:
+            for line in personal_ctx.splitlines():
+                print(f"[DB]     {line}")
+        else:
+            print(f"[DB]     (수강 이력 없음)")
         print(f"{'-'*60}")
 
         response = agent.process_inquiry(test_inquiry)
