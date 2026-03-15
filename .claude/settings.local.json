@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "WebFetch(domain:aitalentlab.skcc.com)",
-      "Bash(python categorize_inquiries.py:*)"
-    ]
-  }
-}
