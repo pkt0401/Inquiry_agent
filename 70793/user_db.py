@@ -119,7 +119,6 @@ def _insert_dummy_data(conn: sqlite3.Connection):
     bc_11  = cohort_ids[("AI Bootcamp", "11기")]
     bc_10  = cohort_ids[("AI Bootcamp", "10기")]
     lit    = cohort_ids[("AI Literacy", "상시")]
-    mp_1   = cohort_ids[("AI Master Project", "1기")]
 
     for uid in KNOWN_AUTHOR_IDS:
         conn.execute("INSERT OR IGNORE INTO users (id, name, email) VALUES (?,?,?)",
@@ -175,10 +174,14 @@ def _insert_dummy_data(conn: sqlite3.Connection):
             )
 
         elif r < 0.88:
-            # 케이스 F: Master Project 1기 참여 (수료)
+            # 케이스 F: Bootcamp 11기 수료 + AI Literacy 수료
             conn.execute(
                 "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
-                (uid, mp_1, "completed", round(random.uniform(70, 100), 1), None),
+                (uid, bc_11, "completed", round(random.uniform(70, 100), 1), None),
+            )
+            conn.execute(
+                "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                (uid, lit, "completed", None, "인증시험 합격"),
             )
 
         # else: 수강 이력 없음
