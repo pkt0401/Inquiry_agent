@@ -250,6 +250,13 @@
 <h1>AI Talent Lab 문의 Agent &mdash; 파이프라인 흐름도</h1>
 <p class="subtitle">inquiry_agent.py 전체 처리 흐름 시각화</p>
 
+<div style="background:#1e2a1e; border:1px solid #3a5a3a; border-radius:8px; padding:12px 18px; margin-bottom:18px; font-size:0.78rem; color:#aaccaa; max-width:760px; margin-left:auto; margin-right:auto;">
+  <strong style="color:#6ab88a;">브랜치 구분</strong>&nbsp;&nbsp;
+  <code style="background:#0d1a0d; padding:2px 6px; border-radius:3px;">main</code> label-aware RAG, 개인화 없음 &nbsp;|&nbsp;
+  <code style="background:#0d1a0d; padding:2px 6px; border-radius:3px;">indiv</code> label-aware RAG + user_db 개인화 &nbsp;|&nbsp;
+  <code style="background:#0d1a0d; padding:2px 6px; border-radius:3px;">indiv_nolabel</code> similarity-only RAG + user_db 개인화
+</div>
+
 <div class="pipeline">
 
   <!-- INPUT -->
@@ -259,6 +266,18 @@
     <div class="box-body">
       <code>title</code> + <code>content</code> (HTML &rarr; 텍스트 변환)<br>
       언어 자동 감지: 한국어 / 영어 / 일본어
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <!-- STEP 0: 개인화 DB (indiv/indiv_nolabel) -->
+  <div class="box" style="background:#1a2a1a; border:1px solid #3a6a3a; max-width:700px;">
+    <div class="box-label" style="color:#6ab88a;">Step 0 &nbsp;&middot;&nbsp; indiv / indiv_nolabel 브랜치만</div>
+    <div class="box-title" style="color:#8ad88a;">개인화 컨텍스트 조회</div>
+    <div class="box-body" style="color:#aaccaa;">
+      <code>user_db.py</code> (SQLite) — 수강생 수강 이력·기수·수료 상태 조회<br>
+      <span style="color:#6ab88a; font-size:0.73rem;">→ LLM 분류·답변 프롬프트에 개인 컨텍스트로 주입</span>
     </div>
   </div>
 
@@ -478,7 +497,8 @@
         Azure <code>text-embedding-3-large</code> (3072차원, endpoint 01)<br>
         코사인 유사도, top_k&times;6 후보 &rarr; 상위 3개 선택<br>
         <span style="color:#6ab88a; font-size:0.73rem; margin-top:4px; display:block;">
-          동일 label 문서 우선 &rarr; label=None 보조<br>
+          <strong style="color:#4ade80;">indiv</strong>: 동일 label 우선 &rarr; label=None 보조 (label-aware)<br>
+          <strong style="color:#facc15;">indiv_nolabel</strong>: label 무시, 순수 유사도 top-3 (similarity-only)<br>
           max_score &rarr; Step 2 다운그레이드 판단에 사용
         </span>
       </div>

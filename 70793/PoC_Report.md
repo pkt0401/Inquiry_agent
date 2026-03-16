@@ -1,5 +1,15 @@
 # AI Talent Lab 문의하기 Agent PoC 보고서
 
+> **브랜치 구분**
+>
+> | 브랜치 | RAG 방식 | 개인화 DB | 비고 |
+> |--------|----------|----------|------|
+> | `main` | label-aware | 없음 | 기본 파이프라인 |
+> | `indiv` | label-aware | user_db.py (수강생 SQLite) | 개인화 답변 추가 |
+> | `indiv_nolabel` | similarity-only (label 무시) | user_db.py (수강생 SQLite) | label 없이 동작 |
+
+---
+
 ## PoC 목표
 
 1. 답변이 가능한 질문과 그렇지 않은 질문은 어떤 것이 있는지?
@@ -10,15 +20,13 @@
 
 ## 1. 데이터 현황
 
-| 항목 | 전체 | 신규(3월) |
-|------|-----:|--------:|
-| 문의 수 | 110건 | 27건 |
-| 댓글 수 | 125건 | 31건 |
+| 구분 | 문의 | 댓글 | 비고 |
+|------|-----:|-----:|------|
+| 전체 (train+test) | 110건 | 125건 | inquiry_all.json + inquiry_comment_all.json (기존+3월 신규 병합) |
+| 테스트 (평가용) | 10건 | — | inquiry_all.json에서 random 샘플링 (random_state=42) |
+| RAG 풀 (학습용) | 100건 | — | 테스트 10건 제외 후 FAISS 인덱싱 (leakage 방지) |
 
-> **전체**: inquiry_all.json + inquiry_comment_all.json (기존 + 3월 신규 병합)
-> **신규(3월)**: test/inquiry_new.json + test/inquiry_comment_new.json (3월 최신 스크랩)
-
-### 문의 유형 분포 (Train 84건 기준)
+### 문의 유형 분포 (Train 100건 기준)
 
 | 유형 | 건수 | Agent 처리 방향 |
 |------|-----:|----------------|
@@ -36,6 +44,11 @@
 
 ```
 문의 입력 (title + content, HTML → 텍스트 변환)
+    │
+    ▼
+[Step 0] 개인화 컨텍스트 조회  ← indiv/indiv_nolabel 브랜치만
+    │  user_db.py (SQLite): 수강생 수강 이력·기수·수료 상태 조회
+    │  → LLM 프롬프트에 개인 컨텍스트로 주입
     │
     ▼
 [Step 1] LLM 분류  (Azure gpt-5.2)
@@ -78,9 +91,15 @@
                                          is_draft=False
 
 [Step 3] RAG 검색  (_build_kb_context)
-    FAISS 유사도 검색 (top_k×6 후보) → label-aware 필터링
+    FAISS 유사도 검색 (top_k×6 후보, Azure text-embedding-3-large 3072차원)
+
+    [indiv 브랜치 — label-aware]
     ① 동일 label 문서 우선 (kb_curated → history 순)
     ② 동일 label 부족 시 label=None history로 보충
+
+    [indiv_nolabel 브랜치 — similarity-only]
+    ① label 무시, 순수 코사인 유사도 상위 top_k 반환
+
     ③ CODE_LOGIC_ERROR 또는 에러 키워드 → error_solutions regex 보완
     ④ COURSE_INFO 라벨 → prior_knowledge.programs 과정 정보 추가
     → max_score 반환 (Step 2 다운그레이드 판단에 사용)
@@ -244,10 +263,10 @@ history 문의에 휴리스틱 라벨(9개 regex)을 부여하는데, 어떤 패
 
 두 모드를 같은 문의에 대해 실행, 검색된 예시 + 생성 답변을 나란히 비교:
 
-| 모드 | 설명 | 활성화 방법 |
+| 모드 | 설명 | 해당 브랜치 |
 |------|------|------------|
-| Mode A (label-aware) | 동일 label 우선 필터 | 기본값 |
-| Mode B (similarity-only) | label 무시, 순수 유사도 | `similarity_only=True` |
+| Mode A (label-aware) | 동일 label 우선 필터 | `main`, `indiv` |
+| Mode B (similarity-only) | label 무시, 순수 유사도 | `indiv_nolabel` |
 
 ### FAISS 인덱스 구성 문서
 
@@ -276,14 +295,23 @@ FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
 | FAISS 벡터 검색 | KB 큐레이션 Q&A + 에러 솔루션 + history (~240건) — Azure text-embedding-3-large (3072차원)<br>※ inquiry_all.json과 겹치는 qa_examples 제거 (leakage 방지) | 해당 Group 2 label |
 | 에러 솔루션 정규식 | API 키, 패키지, 코드 에러 해결법 | `CODE_LOGIC_ERROR` 보완 |
 
-### Tier 2 — 실시간 조회 (DB 연동 필요, 미구현)
+### Tier 2 — 개인화 DB (indiv/indiv_nolabel 브랜치 구현)
+
+| Context | 내용 | 구현 방식 |
+|---------|------|----------|
+| 수강생 수강 이력 | 등록 과정, 기수, 수료/진행중/미수료 상태 | `user_db.py` SQLite (`users`, `cohorts`, `enrollments` 테이블) |
+| 개인화 컨텍스트 주입 | 수강생별 맞춤 컨텍스트 → LLM 분류·답변 프롬프트에 주입 | `UserContextDB.build_personal_context_str()` |
+
+> 실서비스 전환 시 PostgreSQL 등으로 교체 가능 (SQLAlchemy 기반으로 변경하면 됨)
+
+### Tier 3 — 실시간 조회 (미구현)
 
 | Context | 내용 | 필요 이유 |
 |---------|------|----------|
-| 사용자 수강 정보 | 등록 과정, 학습 진행률, 인증 응시 자격 | 개인화 답변 |
+| 학습 진행률·인증 응시 자격 | 실시간 플랫폼 DB 조회 | 더 정밀한 개인화 답변 |
 | 과제 제출 이력 | 제출 횟수, 마감 여부 | `SUBMISSION_POLICY` 정밀 답변 |
 
-### Tier 3 — 고도화 (선택)
+### Tier 4 — 고도화 (선택)
 
 | Context | 내용 | 비고 |
 |---------|------|------|
@@ -301,18 +329,18 @@ FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
 
 ## 10. 구현 파일 목록
 
-| 파일 | 설명 |
-|------|------|
-| `inquiry_agent.py` | 메인 Agent (분류·RAG·답변 생성) |
-| `knowledge_base.json` | 사전 지식 + 큐레이션 Q&A + 에러 솔루션 (static) |
-| `schedule.json` | 기수별 수강 일정 + 인증시험 일정 (dynamic, 기수마다 갱신) |
-| `inquiry_all.json` | 전체 문의 게시물 (110건, 기존+3월 신규 병합) |
-| `inquiry_comment_all.json` | 전체 문의 댓글 (125건) |
-| `test/inquiry_new.json` | 3월 신규 문의 원본 (27건) |
-| `compare_rag_modes.py` | Mode A vs B 비교 스크립트 (random_state 샘플링) |
-| `pipeline_viz.html` | 전체 파이프라인 시각화 (브라우저에서 열기) |
-| `embeddings_cache.pkl` | 임베딩 캐시 (재실행 시 API 미호출) |
-| `requirements.txt` | `openai>=1.0.0`, `faiss-cpu==1.7.4`, `numpy>=1.24.0,<2` |
+| 파일 | 브랜치 | 설명 |
+|------|--------|------|
+| `inquiry_agent.py` | 전체 | 메인 Agent (분류·RAG·답변 생성) |
+| `user_db.py` | indiv, indiv_nolabel | 수강생 개인화 DB (SQLite) |
+| `knowledge_base.json` | 전체 | 사전 지식 + 큐레이션 Q&A + 에러 솔루션 (static) |
+| `schedule.json` | 전체 | 기수별 수강 일정 + 인증시험 일정 (dynamic, 기수마다 갱신) |
+| `inquiry_all.json` | 전체 | 전체 문의 게시물 (110건, 기존+3월 신규 병합) — train+test 통합 소스 |
+| `inquiry_comment_all.json` | 전체 | 전체 문의 댓글 (125건) |
+| `compare_rag_modes.py` | 전체 | Mode A(label-aware) vs B(similarity-only) 비교 스크립트 |
+| `pipeline_viz.html` | 전체 | 전체 파이프라인 시각화 (브라우저에서 열기) |
+| `embeddings_cache.pkl` | 전체 | 임베딩 캐시 (재실행 시 API 미호출) |
+| `requirements.txt` | 전체 | `openai>=1.0.0`, `faiss-cpu==1.7.4`, `numpy>=1.24.0,<2` |
 
 ---
 

@@ -1,7 +1,7 @@
 {
   "_comment": "이 파일은 기수별 일정 등 주기적으로 바뀌는 동적 정보를 관리합니다. 기수 변경 시 이 파일만 수정하세요.",
   "bootcamp": {
-    "current_cohort": "12기",
+    "current_cohort": "12기 (3차)",
     "cohort_cycle_weeks": 4,
     "enrollment_period": {
       "start": "",
@@ -18,13 +18,7 @@
     "notice": "",
     "upcoming_cohorts": [
       {
-        "cohort": "3차",
-        "enrollment_period": { "start": "2026-01-23", "end": "2026-03-21" },
-        "course_period": { "start": "2026-03-23", "end": "2026-04-17" },
-        "status": "대기접수중 (정원 마감 372/372)"
-      },
-      {
-        "cohort": "4차",
+        "cohort": "13기 (4차)",
         "enrollment_period": { "start": "2026-01-23", "end": "2026-04-18" },
         "course_period": { "start": "2026-04-20", "end": "2026-05-15" },
         "status": "접수중"
