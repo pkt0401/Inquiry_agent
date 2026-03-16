@@ -665,7 +665,6 @@ class InquiryAgent:
                         desc += (f"\n  최종과제: 강의 {fa.get('required_lectures')}개 완료 후 시작. "
                                  f"{fa.get('note', '')}")
                     parts.append(f"[과정 정보]\n{desc}")
-                    break
 
         return "\n\n".join(parts) if parts else "관련 KB 정보 없음", max_score
 
