@@ -431,6 +431,16 @@ class InquiryAgent:
                 f"- 모집 기간: {rp.get('start', '미정')} ~ {rp.get('end', '미정')}",
                 f"- 수강 기간: {cp.get('start', '미정')} ~ {cp.get('end', '미정')}",
             ]
+            fs = mp.get("final_schedule", {})
+            if fs:
+                if fs.get("submission_deadline"):
+                    lines.append(f"- 최종 산출물 제출 마감: {fs['submission_deadline']}")
+                if fs.get("ai_interview_period"):
+                    lines.append(f"- AI 면접: {fs['ai_interview_period']}")
+                if fs.get("mentor_evaluation"):
+                    lines.append(f"- 멘토단 평가: {fs['mentor_evaluation']}")
+                if fs.get("result_announcement"):
+                    lines.append(f"- 최종 결과 발표: {fs['result_announcement']}")
             if mp.get("notice"):
                 lines.append(f"- 공지: {mp['notice']}")
         elif mp and mp.get("notice"):
