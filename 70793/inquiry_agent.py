@@ -18,6 +18,7 @@ RAG:
 import json
 import re
 import os
+import random
 import hashlib
 import pickle
 import numpy as np
@@ -28,6 +29,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from openai import AzureOpenAI
 from dotenv import load_dotenv
+from user_db import UserContextDB
 load_dotenv()
 # ──────────────────────────────────────────────────────────────────
 # HTML 전처리
@@ -289,6 +291,7 @@ class InquiryAgent:
     def __init__(self, knowledge_base_path: str = None):
         self.kb       = self._load_knowledge_base(knowledge_base_path)
         self.schedule = self._load_schedule()
+        self.user_db  = UserContextDB()
         self.inquiry_history: List[Dict] = []
         # Chat 클라이언트 — Azure OpenAI 02 (gpt-5.2)
         self._client = AzureOpenAI(
@@ -428,6 +431,16 @@ class InquiryAgent:
                 f"- 모집 기간: {rp.get('start', '미정')} ~ {rp.get('end', '미정')}",
                 f"- 수강 기간: {cp.get('start', '미정')} ~ {cp.get('end', '미정')}",
             ]
+            fs = mp.get("final_schedule", {})
+            if fs:
+                if fs.get("submission_deadline"):
+                    lines.append(f"- 최종 산출물 제출 마감: {fs['submission_deadline']}")
+                if fs.get("ai_interview_period"):
+                    lines.append(f"- AI 면접: {fs['ai_interview_period']}")
+                if fs.get("mentor_evaluation"):
+                    lines.append(f"- 멘토단 평가: {fs['mentor_evaluation']}")
+                if fs.get("result_announcement"):
+                    lines.append(f"- 최종 결과 발표: {fs['result_announcement']}")
             if mp.get("notice"):
                 lines.append(f"- 공지: {mp['notice']}")
         elif mp and mp.get("notice"):
@@ -476,7 +489,8 @@ class InquiryAgent:
 
     # ── Step 1: LLM 분류 ──────────────────────────────────────────
 
-    def _llm_classify(self, inquiry: Dict) -> LLMClassification:
+    def _llm_classify(self, inquiry: Dict,
+                      personal_context: str = "") -> LLMClassification:
         title   = inquiry.get('title', '')
         content = self._strip_html(inquiry.get('content', ''))
 
@@ -484,7 +498,9 @@ class InquiryAgent:
         schedule        = self._schedule_section()
         label_descs     = self._label_description_section()
 
-        system_prompt = f"""너는 AI Talent Lab 문의 분류 Agent야.
+        personal_section = f"\n{personal_context}\n" if personal_context else ""
+
+        system_prompt = f"""너는 AI Talent Lab 문의 분류 Agent야.{personal_section}
 문의를 읽고 아래 10개 카테고리 중 하나로 분류하고, 신뢰도를 판단해.
 
 {prior_knowledge}
@@ -514,16 +530,19 @@ class InquiryAgent:
 - 과제 설계 방향, 아키텍처, 구현 접근법 → ASSIGNMENT_DEVELOPMENT
 
 ## 신뢰도 (confidence_level) 판단 요소:
-① 문의 명확성     — 무엇을 묻는지 텍스트만 봐도 알 수 있는가
-② 카테고리 단일성  — 10개 중 딱 하나에만 해당하는가
-③ 필요 정보 충분성  — 답변하기에 충분한 정보가 문의에 담겨 있는가
-④ KB/일정 정보 보유 — 위의 사전 지식·운영 일정만으로 답변 가능한가
+① 문의 명확성   — 무엇을 묻는지 텍스트만 봐도 알 수 있는가
+② 카테고리 단일성 — 10개 중 딱 하나에만 해당하는가 (두 카테고리 경계에 걸치지 않는가)
+③ 답변 가능성   — 문의 맥락 + 위의 사전 지식/일정 정보를 합쳐서 지금 당장 답변 가능한가
+                  (schedule.json에 날짜·정책이 명시되어 있거나, prior_knowledge에 규정이 있으면 충족)
 
 레벨:
-- very_high : ①②③④ 모두 충족
-- high      : ①②④ 충족, ③ 일부 부족 (추가 확인 불필요한 수준)
-- medium    : ①② 충족, ③ 또는 ④ 불확실 (답변 가능하나 운영자 검토 권장)
-- low       : ① 또는 ② 미충족 (문의 자체가 불명확하거나 분류 불가)
+- very_high : ①②③ 모두 충족 — 사전 지식/일정에 답이 명시되어 있고 문의 맥락도 충분
+- high      : ①② 충족, ③ 일부 부족 — 문의 맥락이 조금 부족하나 RAG로 보완 가능한 수준
+- medium    : ①② 충족, ③ 불확실 — KB/일정에 없거나 개인 상황 확인이 필요해 운영자 검토 권장
+- low       : ① 또는 ② 미충족 — 아래 중 하나에 해당:
+              · 문의 내용이 너무 짧거나 불명확해 무엇을 묻는지 파악 불가
+              · 두 카테고리 모두 동등하게 해당되어 분류 불가
+              · 운영자만 접근 가능한 개인 데이터(점수·처리 상태·계정 이력)가 있어야만 답변 가능
 
 ## 복합 문의 감지
 문의 내에 성격이 서로 다른 카테고리의 질문이 2개 이상 포함된 경우:
@@ -619,7 +638,7 @@ class InquiryAgent:
 
         # ① FAISS 벡터 검색
         if self.vector_store and self.vector_store.index:
-            hits = self.vector_store.search(inquiry_text, label=label.value, top_k=3,
+            hits = self.vector_store.search(inquiry_text, label=label.value, top_k=5,
                                             similarity_only=similarity_only)
             for hit in hits:
                 max_score = max(max_score, hit.get("score", 0.0))
@@ -659,7 +678,6 @@ class InquiryAgent:
                         desc += (f"\n  최종과제: 강의 {fa.get('required_lectures')}개 완료 후 시작. "
                                  f"{fa.get('note', '')}")
                     parts.append(f"[과정 정보]\n{desc}")
-                    break
 
         return "\n\n".join(parts) if parts else "관련 KB 정보 없음", max_score
 
@@ -671,8 +689,9 @@ class InquiryAgent:
         label: InquiryLabel,
         confidence: ConfidenceLevel,
         kb_context: str,
-        is_draft: bool = None,   # strategy 기반으로 외부에서 주입; None이면 confidence로 판단
-        compound_labels: List[InquiryLabel] = None,  # 복합 문의 시 각 sub_label 목록
+        is_draft: bool = None,
+        compound_labels: List[InquiryLabel] = None,
+        personal_context: str = "",
     ) -> str:
         title   = inquiry.get('title', '')
         content = self._strip_html(inquiry.get('content', ''))
@@ -695,9 +714,11 @@ class InquiryAgent:
         else:
             category_line = f"이 문의는 \"{label.value}\" 카테고리로 분류되었어."
 
+        personal_section = f"\n{personal_context}\n" if personal_context else ""
+
         system_prompt = f"""너는 AI Talent Lab 문의 답변 Agent야.
 {'※ 이 답변은 운영자 검토용 초안이야. [초안] 태그로 시작해.' if is_draft else ''}
-
+{personal_section}
 {prior_knowledge}
 
 {schedule}
@@ -737,8 +758,13 @@ class InquiryAgent:
         content = self._strip_html(inquiry.get('content', ''))
         inquiry_text = title + " " + content
 
+        # 개인 맥락 조회 (수강 이력)
+        personal_context = self.user_db.build_personal_context_str(
+            inquiry.get('author_id')
+        )
+
         # Step 1: LLM 분류
-        classification = self._llm_classify(inquiry)
+        classification = self._llm_classify(inquiry, personal_context=personal_context)
 
         # Step 2: Strategy 결정
         strategy, should_respond = self._determine_strategy(
@@ -769,16 +795,16 @@ class InquiryAgent:
             if len(valid_sub) >= 2 and all(sl in GROUP2 for sl in valid_sub):
                 ctx_parts, scores = [], []
                 for sub_lbl in valid_sub:
-                    ctx, score = self._build_kb_context(sub_lbl, inquiry_text)
+                    ctx, score = self._build_kb_context(sub_lbl, inquiry_text, similarity_only=True)
                     ctx_parts.append(f"[{sub_lbl.value} 관련]\n{ctx}")
                     scores.append(score)
                 kb_context = "\n\n---\n\n".join(ctx_parts)
                 max_rag_score = min(scores)   # 가장 낮은 score 기준으로 다운그레이드 판단
                 compound_labels_for_rag = valid_sub
             else:
-                kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text)
+                kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text, similarity_only=True)
         else:
-            kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text)
+            kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text, similarity_only=True)
 
         # RAG 유사도가 낮으면 human_review로 다운그레이드 (tool_rag인 경우에만)
         if strategy == Strategy.TOOL_RAG and max_rag_score < RAG_CONFIDENCE_THRESHOLD:
@@ -793,6 +819,7 @@ class InquiryAgent:
             inquiry, classification.label, classification.confidence_level, kb_context,
             is_draft=(strategy == Strategy.HUMAN_REVIEW),
             compound_labels=compound_labels_for_rag,
+            personal_context=personal_context,
         )
 
         # history 기록 (label 저장)
@@ -977,31 +1004,60 @@ def _load_dotenv():
             break
 
 
+def _word_overlap(a: str, b: str) -> float:
+    """두 텍스트의 단어 집합 overlap 비율 (Jaccard)."""
+    wa = set(a.split())
+    wb = set(b.split())
+    if not wa or not wb:
+        return 0.0
+    return len(wa & wb) / len(wa | wb)
+
+
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="AI Talent Lab 문의 Agent PoC")
+    parser.add_argument("--n-test",       type=int, default=10,  help="테스트케이스 수 (기본 10)")
+    parser.add_argument("--random-state", type=int, default=42,  help="랜덤 시드 (기본 42)")
+    args = parser.parse_args()
+
     print("=== AI Talent Lab 문의 Agent PoC ===\n")
+    print(f"random_state={args.random_state}  n_test={args.n_test}\n")
 
     _load_dotenv()
 
     if not os.environ.get("AZURE_OPENAI_API_KEY") or not os.environ.get("AZURE_OPENAI_EMBED_API_KEY"):
         print("[오류] AZURE_OPENAI_API_KEY 또는 AZURE_OPENAI_EMBED_API_KEY 환경변수가 없습니다.")
-        print("  .env 파일을 확인하세요.")
         return
 
     agent = InquiryAgent()
 
     base_path = os.path.dirname(os.path.abspath(__file__))
 
-    # 통합 데이터 로드 (inquiry_all.json = inquiry.json + inquiry_test.json 중복제거 후 정렬)
     all_inquiries = load_json_file(os.path.join(base_path, 'inquiry_all.json'))
     all_comments  = load_json_file(os.path.join(base_path, 'inquiry_comment_all.json'))
     print(f"통합 문의 데이터: {len(all_inquiries)}건 / 댓글: {len(all_comments)}건")
 
-    agent.load_inquiry_history(all_inquiries, all_comments, pre_label=True)
-    print(f"총 history 로드: {len(agent.inquiry_history)}건 (라벨 사전 부여 완료)\n")
-    print("Agent 준비 완료\n")
+    # 관리자 답변이 있는 문의만 테스트 대상으로 추출 (비교 가능한 것만)
+    admin_ids = agent.ADMIN_IDS
+    comment_map: Dict[int, List[Dict]] = {}
+    for c in all_comments:
+        if c.get('author_id') in admin_ids:
+            comment_map.setdefault(c['inquiry_id'], []).append(c)
 
-    # 테스트 케이스
-    test_cases = load_json_file(os.path.join(base_path, 'test2.json'))
+    has_answer = [inq for inq in all_inquiries if inq['id'] in comment_map]
+
+    rng = random.Random(args.random_state)
+    n = min(args.n_test, len(has_answer))
+    test_cases = rng.sample(has_answer, n)
+    test_ids   = {inq['id'] for inq in test_cases}
+
+    # 테스트셋을 제외한 나머지를 RAG pool로 사용
+    rag_pool = [inq for inq in all_inquiries if inq['id'] not in test_ids]
+    print(f"테스트셋: {len(test_cases)}건 / RAG pool: {len(rag_pool)}건")
+
+    agent.load_inquiry_history(rag_pool, all_comments, pre_label=False)
+    print(f"RAG history 로드: {len(agent.inquiry_history)}건\n")
+    print("Agent 준비 완료\n")
 
     strategy_labels = {
         Strategy.NO_RESPONSE:  "운영자 에스컬레이션",
@@ -1010,18 +1066,27 @@ def main():
     }
 
     for i, test_inquiry in enumerate(test_cases, 1):
-        if i == 6:
-            break
         title   = test_inquiry.get('title', '')
         content = agent._strip_html(test_inquiry.get('content', ''))
         content_preview = content[:200].replace('\n', ' ').strip()
 
+        personal_ctx = agent.user_db.build_personal_context_str(test_inquiry.get('author_id'))
+
+        # 실제 관리자 답변
+        actual_answers = comment_map.get(test_inquiry['id'], [])
+        actual_text    = agent._strip_html(actual_answers[0].get('content', '')) if actual_answers else ''
+
         print(f"\n{'='*60}")
-        print(f"테스트 {i}: {title}")
+        print(f"테스트 {i}/{len(test_cases)}: {title}")
         print(f"{'='*60}")
         print(f"[제목]   {title}")
         print(f"[내용]   {content_preview}{'...' if len(content) > 200 else ''}")
         print(f"[날짜]   {test_inquiry.get('create_dt', '없음')}")
+        if personal_ctx:
+            for line in personal_ctx.splitlines():
+                print(f"[DB]     {line}")
+        else:
+            print(f"[DB]     (수강 이력 없음)")
         print(f"{'-'*60}")
 
         response = agent.process_inquiry(test_inquiry)
@@ -1041,6 +1106,12 @@ def main():
 
         if response.answer:
             print(f"\n[생성된 답변]\n{response.answer}")
+
+        if actual_text:
+            print(f"\n[실제 관리자 답변]\n{actual_text[:400]}{'...' if len(actual_text) > 400 else ''}")
+            if response.answer:
+                overlap = _word_overlap(response.answer, actual_text)
+                print(f"\n[단어 overlap]  {overlap*100:.1f}%")
 
 
 if __name__ == "__main__":

@@ -338,22 +338,18 @@
       <div style="font-size:0.75rem; color:#7a9adf; font-weight:600; margin-bottom:6px;">신뢰도 판단 기준 (confidence_level)</div>
 
       <!-- 기준 설명 -->
-      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px;">
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px;">
         <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
           <span style="color:#9fb8f5; font-weight:700;">① 명확성</span><br>
-          <span style="color:#aaa;">문의 목적이 뚜렷하고 내용이 구체적인가</span>
+          <span style="color:#aaa;">무엇을 묻는지 텍스트만 봐도 알 수 있는가</span>
         </div>
         <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
           <span style="color:#9fb8f5; font-weight:700;">② 단일성</span><br>
-          <span style="color:#aaa;">하나의 카테고리로 명확히 분류 가능한가 (UNCATEGORIZED 아님)</span>
+          <span style="color:#aaa;">두 카테고리 경계에 걸치지 않고 딱 하나로 분류 가능한가</span>
         </div>
         <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
-          <span style="color:#9fb8f5; font-weight:700;">③ 필요정보충분성</span><br>
-          <span style="color:#aaa;">답변하기에 충분한 정보가 문의에 담겨 있는가</span>
-        </div>
-        <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
-          <span style="color:#9fb8f5; font-weight:700;">④ KB/일정정보보유</span><br>
-          <span style="color:#aaa;">사전 지식·운영 일정(schedule.json)만으로 답변 가능한가</span>
+          <span style="color:#9fb8f5; font-weight:700;">③ 답변 가능성</span><br>
+          <span style="color:#aaa;">문의 맥락 + 사전 지식/일정(schedule.json)으로 지금 당장 답변 가능한가</span>
         </div>
       </div>
 
@@ -364,34 +360,33 @@
             <th>충족 조건</th>
             <th>① 명확성</th>
             <th>② 단일성</th>
-            <th>③ 필요정보충분</th>
-            <th>④ KB/일정정보</th>
+            <th>③ 답변가능성</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td><span class="level-pill lp-vh">very_high</span></td>
-            <td>①②③④ 모두 충족</td>
+            <td>①②③ 모두 — KB/일정에 답 명시</td>
             <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-            <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
+            <td style="text-align:center;">✅</td>
           </tr>
           <tr>
             <td><span class="level-pill lp-hi">high</span></td>
-            <td>①②④ 충족, ③ 일부 부족</td>
+            <td>①② 충족, ③ 일부 부족 — RAG로 보완 가능</td>
             <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-            <td style="text-align:center;">⚠️</td><td style="text-align:center;">✅</td>
+            <td style="text-align:center;">⚠️</td>
           </tr>
           <tr>
             <td><span class="level-pill lp-me">medium</span></td>
-            <td>①② 충족, ③ 또는 ④ 불확실</td>
+            <td>①② 충족, ③ 불확실 — 개인 확인 또는 KB 없음</td>
             <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-            <td style="text-align:center;">❓</td><td style="text-align:center;">❓</td>
+            <td style="text-align:center;">❓</td>
           </tr>
           <tr>
             <td><span class="level-pill lp-lo">low</span></td>
-            <td>① 또는 ② 미충족</td>
+            <td>① 또는 ② 미충족, 또는 개인 DB만 답변 가능</td>
             <td style="text-align:center;">❌</td><td style="text-align:center;">—</td>
-            <td style="text-align:center;">—</td><td style="text-align:center;">—</td>
+            <td style="text-align:center;">—</td>
           </tr>
         </tbody>
       </table>

@@ -36,16 +36,24 @@
     }
   },
   "master_project": {
-    "current_cohort": "",
+    "current_cohort": "8주 과정",
     "recruitment_period": {
       "start": "",
       "end": ""
     },
     "course_period": {
       "start": "",
-      "end": ""
+      "end": "2026-03-26"
     },
-    "notice": "현재 모집 공고 없음"
+    "final_schedule": {
+      "submission_deadline": "2026-03-26",
+      "submission_note": "최종 산출물 제출 마감",
+      "ai_interview_prep": "2026-03-27 오전 (AI 면접 질문 생성 및 검증)",
+      "ai_interview_period": "2026-03-27 14:00 ~ 2026-03-31 (AI 면접 진행)",
+      "mentor_evaluation": "~ 2026-04-02 (시니어 멘토단 평가 및 검증)",
+      "result_announcement": "2026-04-03 (서비스 내 최종 결과 발표)"
+    },
+    "notice": " 최종 일정 진행 중이며 4/3(금) 최종 결과 발표 예정."
   },
   "global_notice": ""
 }
