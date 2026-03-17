@@ -49,8 +49,8 @@
   },
   {
     "id": 9005,
-    "title": "API 키 오류가 계속 납니다",
-    "content": "<p>안녕하세요. 과제 개발 중 아래 오류가 계속 발생합니다.</p><pre><code>openai.AuthenticationError: Error code: 401 - Incorrect API key provided: sk-proj-****</code></pre><p>.env 파일에 키를 넣었는데도 오류가 납니다. 혹시 load_dotenv()를 빠뜨린 건지 확인해봤는데도 동일합니다.</p>",
+    "title": "플랫폼 IDE에서 OpenAI API 오류가 납니다",
+    "content": "<p>안녕하세요. 과제 개발 중 플랫폼 IDE에서 코드를 실행하면 아래 오류가 발생합니다.</p><pre><code>openai.AuthenticationError: Error code: 401 - Incorrect API key provided</code></pre><p>API 키를 어디에 입력해야 하는지 모르겠습니다. 플랫폼에서 따로 설정하는 방법이 있나요?</p>",
     "author_id": 2343,
     "file_ids": "[]",
     "group_id": null,
