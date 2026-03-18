@@ -542,7 +542,7 @@
         <div style="font-size:0.75rem; color:#c0a060; font-weight:600; margin-bottom:6px;">입력 &uarr;</div>
         <div class="box-body">
           &middot; 문의 (제목 + 내용)<br>
-          &middot; <strong>[KB 정보]</strong>: FAISS 검색 결과 top-3<br>
+          &middot; <strong>[참고 정보]</strong>: FAISS 검색 결과 top-3<br>
           &middot; prior_knowledge + schedule.json<br>
           &middot; 개인 컨텍스트 (indiv 브랜치)
         </div>
@@ -560,9 +560,9 @@
     <!-- 자체 평가 기준 -->
     <div style="background:#1a1400; border:1px solid #4a3800; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:0.76rem; line-height:1.6; color:#c8b060;">
       <strong>답변 신뢰도 자체 평가 기준</strong><br>
-      <span style="color:#4ade80;">high</span>: KB 정보에 명확한 근거가 있어 답변이 완결됨<br>
-      <span style="color:#f0c040;">medium</span>: KB 정보로 부분 답변 가능하나 운영자 확인이 필요한 부분 존재<br>
-      <span style="color:#e74c3c;">low</span>: KB 정보에 근거가 부족해 추측성 답변이 됨
+      <span style="color:#4ade80;">high</span>: 참고 정보에 명확한 근거가 있어 답변이 완결됨<br>
+      <span style="color:#f0c040;">medium</span>: 참고 정보로 부분 답변 가능하나 운영자 확인이 필요한 부분 존재<br>
+      <span style="color:#e74c3c;">low</span>: 참고 정보에 근거가 부족해 추측성 답변이 됨
     </div>
 
     <!-- 2차 분기 -->
@@ -587,9 +587,10 @@
 
     <div style="margin-top:14px; font-size:0.78rem; color:#b0a060; background:#1a1600; border:1px solid #4a3a00; border-radius:8px; padding:10px 14px; line-height:1.6;">
       <strong>답변 규칙</strong>: 언어 감지 후 한국어&middot;영어&middot;일본어 인사말 분기
-      &rarr; KB 정보 우선 참고
-      &rarr; KB에 없으면 &ldquo;확인 후 안내드리겠습니다&rdquo;
+      &rarr; 참고 정보 우선 활용
+      &rarr; 확인되지 않은 내용은 &ldquo;확인 후 안내드리겠습니다&rdquo;
       &rarr; 마지막 &ldquo;감사합니다.&rdquo; 로 마무리
+      &rarr; <strong>내부 용어(KB&middot;참고 정보&middot;시스템 등) 답변에 절대 노출 금지</strong>
     </div>
   </div>
 
