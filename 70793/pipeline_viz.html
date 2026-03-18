@@ -335,21 +335,17 @@
 
     <!-- 신뢰도 테이블 -->
     <div style="margin-top:16px;">
-      <div style="font-size:0.75rem; color:#7a9adf; font-weight:600; margin-bottom:6px;">신뢰도 판단 기준 (confidence_level)</div>
+      <div style="font-size:0.75rem; color:#7a9adf; font-weight:600; margin-bottom:6px;">분류 신뢰도 기준 (confidence_level) — ①② 텍스트 기반, RAG 없이 판단</div>
 
       <!-- 기준 설명 -->
-      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
         <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
           <span style="color:#9fb8f5; font-weight:700;">① 명확성</span><br>
           <span style="color:#aaa;">무엇을 묻는지 텍스트만 봐도 알 수 있는가</span>
         </div>
         <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
           <span style="color:#9fb8f5; font-weight:700;">② 단일성</span><br>
-          <span style="color:#aaa;">두 카테고리 경계에 걸치지 않고 딱 하나로 분류 가능한가</span>
-        </div>
-        <div style="background:#111830; border:1px solid #2a3a60; border-radius:7px; padding:8px 10px; font-size:0.75rem; line-height:1.5;">
-          <span style="color:#9fb8f5; font-weight:700;">③ 답변 가능성</span><br>
-          <span style="color:#aaa;">문의 맥락 + 사전 지식/일정(schedule.json)으로 지금 당장 답변 가능한가</span>
+          <span style="color:#aaa;">딱 하나로 분류 가능한가 (복합 문의로 sub_label 명확히 식별 가능하면 ② 충족)</span>
         </div>
       </div>
 
@@ -360,36 +356,24 @@
             <th>충족 조건</th>
             <th>① 명확성</th>
             <th>② 단일성</th>
-            <th>③ 답변가능성</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><span class="level-pill lp-vh">very_high</span></td>
-            <td>①②③ 모두 — KB/일정에 답 명시</td>
-            <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-            <td style="text-align:center;">✅</td>
-          </tr>
-          <tr>
             <td><span class="level-pill lp-hi">high</span></td>
-            <td>①② 충족, ③ 일부 부족 — RAG로 보완 가능</td>
+            <td>①② 모두 충족 — RAG 시도 (점수·답변 신뢰도로 추가 분기)</td>
             <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-            <td style="text-align:center;">⚠️</td>
-          </tr>
-          <tr>
-            <td><span class="level-pill lp-me">medium</span></td>
-            <td>①② 충족, ③ 불확실 — 개인 확인 또는 KB 없음</td>
-            <td style="text-align:center;">✅</td><td style="text-align:center;">✅</td>
-            <td style="text-align:center;">❓</td>
           </tr>
           <tr>
             <td><span class="level-pill lp-lo">low</span></td>
-            <td>① 또는 ② 미충족, 또는 개인 DB만 답변 가능</td>
+            <td>① 또는 ② 미충족 — 즉시 no_response</td>
             <td style="text-align:center;">❌</td><td style="text-align:center;">—</td>
-            <td style="text-align:center;">—</td>
           </tr>
         </tbody>
       </table>
+      <div style="font-size:0.72rem; color:#6a8a6a; margin-top:8px;">
+        ③ 답변 가능성은 실제 KB context를 확인한 후 Step 4(답변 생성)에서 LLM이 자체 평가
+      </div>
     </div>
   </div>
 
@@ -420,9 +404,10 @@
         <span style="font-size:1rem; font-weight:700; color:#f0c040;">[초안] 생성</span><br>
         <span style="color:#aaa; font-size:0.75rem;">운영자 검토 후 게시</span>
         <div class="cond">
-          <code>confidence == medium</code><br><br>
-          OR <code>tool_rag</code> 이었는데<br>
-          RAG score &lt; <strong>0.65</strong> (다운그레이드)
+          <code>tool_rag</code> 이었는데<br>
+          RAG score &lt; <strong>0.65</strong> (1차 다운그레이드)<br><br>
+          OR 답변 신뢰도 <code>medium</code><br>
+          (2차 다운그레이드 — Step 4)
         </div>
       </div>
 
@@ -434,8 +419,8 @@
         <div class="cond">
           label ∈ <strong>Group 2</strong><br>
           AND <code>confidence == high</code><br>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <code>very_high</code><br>
-          AND RAG score &ge; <strong>0.65</strong>
+          AND RAG score &ge; <strong>0.65</strong><br>
+          AND 답변 신뢰도 <code>high</code>
         </div>
       </div>
 
@@ -547,26 +532,56 @@
 
   <div class="arrow"></div>
 
-  <!-- STEP 4: 답변 생성 -->
+  <!-- STEP 4: 답변 생성 + 자체 평가 -->
   <div class="box theme-answer">
     <div class="box-label">Step 4 &nbsp;&middot;&nbsp; Azure gpt-5.2 (endpoint 02)</div>
-    <div class="box-title">답변 생성</div>
+    <div class="box-title">답변 생성 + LLM 자체 평가</div>
 
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div>
+        <div style="font-size:0.75rem; color:#c0a060; font-weight:600; margin-bottom:6px;">입력 &uarr;</div>
+        <div class="box-body">
+          &middot; 문의 (제목 + 내용)<br>
+          &middot; <strong>[KB 정보]</strong>: FAISS 검색 결과 top-3<br>
+          &middot; prior_knowledge + schedule.json<br>
+          &middot; 개인 컨텍스트 (indiv 브랜치)
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem; color:#c0a060; font-weight:600; margin-bottom:6px;">출력 JSON &rarr;</div>
+        <div class="box-body">
+          &middot; <code>answer</code>: 답변 텍스트<br>
+          &middot; <code>answer_confidence</code>: <strong>high</strong> / <strong>medium</strong> / <strong>low</strong><br>
+          &middot; <code>uncertain_parts</code>: 확신 없는 부분
+        </div>
+      </div>
+    </div>
+
+    <!-- 자체 평가 기준 -->
+    <div style="background:#1a1400; border:1px solid #4a3800; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:0.76rem; line-height:1.6; color:#c8b060;">
+      <strong>답변 신뢰도 자체 평가 기준</strong><br>
+      <span style="color:#4ade80;">high</span>: KB 정보에 명확한 근거가 있어 답변이 완결됨<br>
+      <span style="color:#f0c040;">medium</span>: KB 정보로 부분 답변 가능하나 운영자 확인이 필요한 부분 존재<br>
+      <span style="color:#e74c3c;">low</span>: KB 정보에 근거가 부족해 추측성 답변이 됨
+    </div>
+
+    <!-- 2차 분기 -->
+    <div style="font-size:0.75rem; color:#c0a060; font-weight:600; margin-bottom:8px;">Step 5 — 2차 strategy 분기 (답변 신뢰도 기반, 다운그레이드만)</div>
     <div class="output-grid">
       <div class="out-card s-red">
         <span class="badge badge-red" style="margin-bottom:8px; display:block;">no_response</span>
-        답변 생성 없음<br>
-        <span style="color:#aaa; font-size:0.73rem;">운영자에게 에스컬레이션<br>should_respond = False</span>
+        <code style="color:#e74c3c;">answer_confidence == low</code><br>
+        <span style="color:#aaa; font-size:0.73rem;">KB 근거 부족 → 에스컬레이션<br>should_respond = False</span>
       </div>
       <div class="out-card s-yellow">
         <span class="badge badge-yellow" style="margin-bottom:8px; display:block;">human_review</span>
-        <code style="color:#f0c040;">[초안]</code> 태그 부착<br>
-        <span style="color:#aaa; font-size:0.73rem;">is_draft = True<br>운영자 검토 후 게시</span>
+        <code style="color:#f0c040;">answer_confidence == medium</code><br>
+        <span style="color:#aaa; font-size:0.73rem;">[초안] 태그 부착<br>운영자 검토 후 게시</span>
       </div>
       <div class="out-card s-green">
         <span class="badge badge-green" style="margin-bottom:8px; display:block;">tool_rag</span>
-        최종 답변 자동 게시<br>
-        <span style="color:#aaa; font-size:0.73rem;">is_draft = False<br>자동 게시 완료</span>
+        <code style="color:#4ade80;">answer_confidence == high</code><br>
+        <span style="color:#aaa; font-size:0.73rem;">기존 strategy 유지<br>자동 게시 완료</span>
       </div>
     </div>
 
