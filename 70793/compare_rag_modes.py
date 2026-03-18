@@ -162,17 +162,21 @@ def compare_one(agent: InquiryAgent, case: dict, idx: int, actual_answer_map: di
     print(f"\n{'─'*72}")
     print(f"  [Mode A 답변]  label-aware  |  strategy={strategy_a.value}")
     print(f"{'─'*72}")
-    ans_a = agent._generate_answer(case, label, conf, ctx_a,
-                                   is_draft=(strategy_a == Strategy.HUMAN_REVIEW))
+    eval_a = agent._generate_answer(case, label, ctx_a)
+    ans_a = f"[초안] {eval_a.answer}" if strategy_a == Strategy.HUMAN_REVIEW else eval_a.answer
     print(ans_a)
+    print(f"  [답변 신뢰도] {eval_a.answer_confidence}"
+          + (f"  / 불확실: {eval_a.uncertain_parts}" if eval_a.uncertain_parts else ""))
 
     # ── Mode B 답변 ────────────────────────────────────────────────
     print(f"\n{'─'*72}")
     print(f"  [Mode B 답변]  similarity-only  |  strategy={strategy_b.value}")
     print(f"{'─'*72}")
-    ans_b = agent._generate_answer(case, label, conf, ctx_b,
-                                   is_draft=(strategy_b == Strategy.HUMAN_REVIEW))
+    eval_b = agent._generate_answer(case, label, ctx_b)
+    ans_b = f"[초안] {eval_b.answer}" if strategy_b == Strategy.HUMAN_REVIEW else eval_b.answer
     print(ans_b)
+    print(f"  [답변 신뢰도] {eval_b.answer_confidence}"
+          + (f"  / 불확실: {eval_b.uncertain_parts}" if eval_b.uncertain_parts else ""))
 
     words_a = set(ans_a.split())
     words_b = set(ans_b.split())
