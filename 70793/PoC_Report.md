@@ -57,38 +57,31 @@
     │  ↑ 기수 일정·인증시험 일정 주입 — schedule.json (동적, 기수마다 갱신)
     │
     │  label       → 10개 카테고리 중 하나 (복합 시 우선순위 높은 라벨)
-    │  confidence  → very_high / high / medium / low
+    │  confidence  → high / low  (①문의 명확성 ②카테고리 단일성만으로 판단)
     │  is_compound → 성격이 다른 질문이 2개 이상 포함 여부
     │  sub_labels  → 감지된 모든 라벨 목록
     │
     ▼
-[Step 2] 코드가 strategy 결정
+[Step 2] 코드가 1차 strategy 결정
     │
     ├─ [복합 문의] is_compound=true AND sub_labels 中 Group1 라벨 포함
     │      → human_review  (RAG로 답변 가능한 부분 초안 + 운영자가 나머지 처리)
     │
     ├─ [복합 문의] is_compound=true AND sub_labels 全 Group2 AND 2–3개
     │      → tool_rag  (sub_label 각각 RAG 검색 후 context 합산 → 통합 답변 생성)
-    │           └─ min(RAG score) < 0.65 → human_review 다운그레이드
+    │           └─ min(RAG score) < 0.65 → human_review 1차 다운그레이드
     │
     ├─ [복합 문의] is_compound=true AND sub_labels 全 Group2 AND 4개 이상
     │      → human_review  (복잡도 초과, 운영자 검토)
     │
     ├─ Group 1 라벨 OR confidence == low
-    │      → no_response   (운영자 에스컬레이션, 답변 생성 없음)
+    │      → no_response   (운영자 에스컬레이션, 즉시 종료)
     │
-    ├─ confidence == medium
-    │      → human_review  (RAG 검색 후 [초안] 답변 생성, 운영자 검토 후 게시)
-    │      └── is_draft=True
-    │
-    └─ confidence == high / very_high  (Group 2)
+    └─ confidence == high  (Group 2)
            → RAG 검색 후 max_score 확인
                 │
-                ├─ max_score < 0.65  → human_review 다운그레이드 (초안 답변, 운영자 검토)
-                │                        is_draft=True
-                │
-                └─ max_score ≥ 0.65  → tool_rag  (최종 답변 자동 게시)
-                                         is_draft=False
+                ├─ max_score < 0.65  → human_review 1차 다운그레이드
+                └─ max_score ≥ 0.65  → tool_rag (잠정)
 
 [Step 3] RAG 검색  (_build_kb_context)
     FAISS 유사도 검색 (top_k×6 후보, Azure text-embedding-3-large 3072차원)
@@ -102,7 +95,18 @@
 
     ③ CODE_LOGIC_ERROR 또는 에러 키워드 → error_solutions regex 보완
     ④ COURSE_INFO 라벨 → prior_knowledge.programs 과정 정보 추가
-    → max_score 반환 (Step 2 다운그레이드 판단에 사용)
+    → max_score 반환 (Step 2 1차 다운그레이드 판단에 사용)
+
+[Step 4] 답변 생성 + LLM 자체 평가  (Azure gpt-5.2)
+    실제 KB context를 모두 본 상태에서 답변 생성
+    → answer           : 답변 텍스트
+    → answer_confidence: high / medium / low  (KB 근거 기반 자체 평가)
+    → uncertain_parts  : 확신 없는 부분 설명
+
+[Step 5] 2차 strategy 분기 (답변 신뢰도 기반, 다운그레이드만)
+    ├─ answer_confidence == low    → no_response  (KB 근거 부족, 에스컬레이션)
+    ├─ answer_confidence == medium → human_review ([초안] 태그 부착, 운영자 검토)
+    └─ answer_confidence == high   → 기존 strategy 유지 (tool_rag이면 자동 게시)
 ```
 
 ---
@@ -131,26 +135,29 @@
 
 ---
 
-## 4. 신뢰도(Confidence) — 4단계
+## 4. 신뢰도(Confidence) — 2단계 분리 구조
 
-### 판단 요소 (텍스트만으로)
+### Step 1 — 분류 신뢰도 (텍스트만으로 판단, RAG 전)
 
 | 번호 | 요소 | 판단 질문 |
 |------|------|----------|
 | ① | 문의 명확성 | 무엇을 묻는지 텍스트만 봐도 알 수 있는가? |
-| ② | 카테고리 단일성 | 10개 중 딱 하나에만 해당하는가? (두 카테고리 경계에 걸치지 않는가?) |
-| ③ | 답변 가능성 | 문의 맥락 + 사전 지식/일정 정보를 합쳐서 지금 당장 답변 가능한가? (schedule.json에 날짜·정책이 명시되어 있거나, prior_knowledge에 규정이 있으면 충족) |
-
-> ③과 ④를 통합한 이유: 기존 ③(질문자 측 충분성)과 ④(시스템 측 보유 여부)는 방향이 달라 LLM이 혼동하기 쉬웠으며, ③이 부족하면 ④ 판단 자체가 불가능해 사실상 같이 움직였음.
-
-### 레벨별 처리 방식
+| ② | 카테고리 단일성 | 10개 중 딱 하나에만 해당하는가? (복합 문의로 sub_label 명확히 식별 가능한 경우는 ② 충족 간주) |
 
 | 레벨 | 충족 조건 | 처리 방식 |
 |------|----------|----------|
-| `very_high` | ①②③ 모두 충족 — 사전 지식/일정에 답이 명시되어 있고 문의 맥락도 충분 | `tool_rag` → 자동 게시 |
-| `high` | ①② 충족, ③ 일부 부족 — 문의 맥락이 조금 부족하나 RAG로 보완 가능한 수준 | `tool_rag` → 자동 게시 |
-| `medium` | ①② 충족, ③ 불확실 — KB/일정에 없거나 개인 상황 확인이 필요해 운영자 검토 권장 | `human_review` → 초안 + 운영자 검토 |
-| `low` | ① 또는 ② 미충족, 또는 운영자만 접근 가능한 개인 데이터(점수·처리 상태·계정 이력)가 있어야만 답변 가능한 경우 | `no_response` → 에스컬레이션 |
+| `high` | ①② 모두 충족 | `tool_rag` 시도 (RAG 점수·답변 신뢰도로 추가 분기) |
+| `low` | ① 또는 ② 미충족 | `no_response` → 에스컬레이션 (즉시 종료) |
+
+> ③(답변 가능성)을 Step 1에서 제거한 이유: RAG 결과 없이 LLM이 추측할 수밖에 없어 부정확했음. 실제 KB context를 본 후 Step 4에서 자체 평가하는 것이 더 정확함.
+
+### Step 4 — 답변 신뢰도 (LLM 자체 평가, RAG context 확인 후)
+
+| 레벨 | 판단 기준 | 처리 방식 |
+|------|----------|----------|
+| `high` | KB 정보에 명확한 근거가 있어 답변이 완결됨 | 기존 strategy 유지 (tool_rag이면 자동 게시) |
+| `medium` | KB 정보로 부분 답변 가능하나 운영자 확인 필요 | `human_review` → [초안] 태그 + 운영자 검토 |
+| `low` | KB 정보에 근거가 부족해 추측성 답변이 됨 | `no_response` → 에스컬레이션 |
 
 ### 혼동 잦은 라벨 쌍 구분 기준 (LLM 프롬프트에 명시)
 
@@ -164,33 +171,42 @@
 
 ## 5. LLM vs 코드 역할 분리
 
-**LLM이 판단하는 것 (4가지)**
-- `label` → 10개 카테고리 중 하나 (복합 시 우선순위 높은 라벨)
-- `confidence_level` → very_high / high / medium / low
-- `is_compound` → 성격이 다른 질문이 2개 이상 포함 여부
-- `sub_labels` → 감지된 모든 라벨 목록
+**LLM이 판단하는 것**
+
+| 단계 | 항목 | 내용 |
+|------|------|------|
+| Step 1 | `label` | 10개 카테고리 중 하나 (복합 시 우선순위 높은 라벨) |
+| Step 1 | `confidence_level` | high / low (①문의 명확성 ②카테고리 단일성) |
+| Step 1 | `is_compound` | 성격이 다른 질문이 2개 이상 포함 여부 |
+| Step 1 | `sub_labels` | 감지된 모든 라벨 목록 |
+| Step 4 | `answer_confidence` | high / medium / low (실제 KB context 보고 자체 평가) |
+| Step 4 | `uncertain_parts` | 확신 없는 부분 설명 |
 
 **코드가 결정하는 것**
 ```python
-# Step 2: 기본 strategy 결정 (우선순위 순)
+# Step 2: 1차 strategy 결정 (우선순위 순)
 is_compound AND any(sub_label in GROUP1)                    → human_review   # Group1 포함 복합: 운영자 처리 필요
 is_compound AND all(sub_label in GROUP2) AND 2<=count<=3   → tool_rag       # Group2 복합 2-3개: multi-RAG 합산
 is_compound AND all(sub_label in GROUP2) AND count >= 4    → human_review   # Group2 복합 4개+: 복잡도 초과
-label in Group1 OR confidence == 'low'                     → no_response    # 운영자 에스컬레이션
-confidence == 'medium'                                     → human_review   # RAG 초안 + 운영자 검토
-confidence == 'very_high' / 'high'                         → tool_rag       # RAG 자동 답변
+label in Group1 OR confidence == 'low'                     → no_response    # 운영자 에스컬레이션 (즉시 종료)
+confidence == 'high'                                       → tool_rag       # RAG 시도
 
 # Step 3: RAG 검색 (복합 Group2 2-3개는 sub_label별 각각 검색 후 합산)
 # 단일 문의:   kb_context, score = _build_kb_context(label, text)
 # 복합 G2 문의: ctx_list = [_build_kb_context(lbl, text) for lbl in sub_labels]
 #               kb_context = join(ctx_list),  score = min(scores)
 
-# RAG 유사도 기반 다운그레이드 (tool_rag만 해당)
+# RAG 유사도 기반 1차 다운그레이드 (tool_rag만 해당)
 strategy == 'tool_rag' AND score < 0.65
-    → strategy='human_review'  (RAG 예시 품질 부족 → 운영자 검토 필요)
+    → strategy='human_review'
 
-# 답변 초안 여부: confidence가 아닌 최종 strategy 기준
-is_draft = (strategy == 'human_review')  # [초안] 태그 부착 여부
+# Step 5: 답변 신뢰도 기반 2차 분기 (다운그레이드만)
+answer_confidence == 'low'    → strategy='no_response'   # KB 근거 부족, 에스컬레이션
+answer_confidence == 'medium' → strategy='human_review'  # 부분 답변 가능, 운영자 검토
+answer_confidence == 'high'   → 기존 strategy 유지       # 자동 게시
+
+# [초안] 태그: 최종 strategy가 human_review인 경우 부착
+is_draft = (strategy == 'human_review')
 ```
 
 ---

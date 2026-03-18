@@ -81,9 +81,10 @@ python inquiry_agent.py
 테스트 1: 과제 제출 문의
 ────────────────────────────────────────────────────────────
 [Label]       SUBMISSION_POLICY
-[신뢰도]      very_high
+[신뢰도]      high
 [Strategy]    RAG 자동 답변 게시
 [판단 근거]   과제 재제출 규정에 대한 명확한 문의
+[답변 신뢰도] high
 
 [생성된 답변]
 안녕하세요, AI Talent Lab입니다.
@@ -101,23 +102,21 @@ python inquiry_agent.py
 [Step 0] 개인화 컨텍스트 조회 (user_db.py — indiv/indiv_nolabel 브랜치)
   ↑ 수강생 수강 이력·기수·수료 상태 → LLM 프롬프트에 주입
   ↓
-[Step 1] LLM 분류  →  label(10개) + confidence_level(4단계) + is_compound + sub_labels
+[Step 1] LLM 분류  →  label(10개) + confidence_level(high/low) + is_compound + sub_labels
           ↑ prior_knowledge + 라벨별 설명·예시 (knowledge_base.json) 주입
           ↑ 기수 일정·인증시험 일정 (schedule.json) 주입
           ↑ 수강생 개인 컨텍스트 주입 (indiv/indiv_nolabel)
+          ※ confidence는 ①문의 명확성 ②카테고리 단일성만으로 판단 (RAG 없이 판단 가능한 것)
   ↓
-[Step 2] 코드가 strategy 결정
+[Step 2] 코드가 1차 strategy 결정
   ├─ 복합 문의 (is_compound) + sub_labels 中 Group1 포함
   │      →  human_review  (RAG 초안 + 운영자가 나머지 처리)
   ├─ 복합 문의 (is_compound) + sub_labels 全 Group2 + 2–3개
   │      →  tool_rag  (sub_label 각각 RAG 후 context 합산 → 통합 답변)
-  │           └─ min(RAG score) < 0.65 → human_review 다운그레이드
   ├─ 복합 문의 (is_compound) + sub_labels 全 Group2 + 4개 이상
   │      →  human_review  (복잡도 초과, 운영자 검토)
-  ├─ Group 1 라벨 OR confidence == low    →  no_response   (운영자 에스컬레이션)
-  ├─ confidence == medium                 →  human_review  (RAG 초안 + 운영자 검토)
-  └─ confidence == high / very_high       →  tool_rag      (RAG 자동 답변 게시)
-                                               └─ RAG score < 0.65 → human_review 다운그레이드
+  ├─ Group 1 라벨 OR confidence == low  →  no_response  (운영자 에스컬레이션, 즉시 종료)
+  └─ confidence == high                 →  tool_rag (RAG 점수로 다운그레이드 가능)
   ↓
 [Step 3] RAG 검색 (tool_rag / human_review)
   ① FAISS 벡터 검색 (Azure text-embedding-3-large, 3072차원)
@@ -126,6 +125,17 @@ python inquiry_agent.py
      ※ 복합 문의 Group2 2-3개: sub_label별 각각 검색 후 context 합산, min(score)로 다운그레이드 판단
   ② 에러 솔루션 정규식 보완 (CODE_LOGIC_ERROR 또는 에러 키워드 감지 시)
   ③ 과정 정보 보완 (COURSE_INFO)
+  ※ RAG score < 0.65 → tool_rag을 human_review로 1차 다운그레이드
+  ↓
+[Step 4] 답변 생성 + LLM 자체 평가 (Azure gpt-5.2)
+  → 실제 KB context를 보고 답변 생성
+  → answer_confidence (high/medium/low) 자체 평가 — "내가 충분한 근거로 답변하고 있는가"
+  → uncertain_parts: 확신 없는 부분 설명
+  ↓
+[Step 5] 2차 strategy 분기 (답변 신뢰도 기반, 다운그레이드만)
+  ├─ answer_confidence == low    →  no_response  (에스컬레이션)
+  ├─ answer_confidence == medium →  human_review ([초안] 태그 부착)
+  └─ answer_confidence == high   →  기존 strategy 유지 (자동 게시)
   ※ embeddings_cache.pkl 에 임베딩 결과 캐시 → 재실행 시 API 미호출
 ```
 
