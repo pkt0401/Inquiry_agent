@@ -3,11 +3,10 @@ AI Talent Lab 문의하기 Agent PoC
 
 흐름:
   문의 입력
-  → [Step 1] LLM 분류: label(10개) + confidence_level(4단계)
+  → [Step 1] LLM 분류: label(10개) + confidence_level(high/low)
   → [Step 2] 코드가 strategy 결정:
-       Group 1 라벨 또는 confidence==low  → no_response   (운영자 에스컬레이션)
-       confidence==medium                 → human_review  (RAG 초안 + 운영자 검토)
-       confidence==high/very_high + G2   → tool_rag      (RAG 자동 답변 게시)
+       Group 1 라벨 또는 confidence==low → no_response  (운영자 에스컬레이션)
+       confidence==high + Group2         → tool_rag     (RAG 시도, 유사도 낮으면 human_review)
 
 RAG:
   - knowledge_base.json 에서 해당 label의 큐레이션 예제 우선 검색
@@ -114,10 +113,8 @@ RAG_CONFIDENCE_THRESHOLD = 0.65
 # ──────────────────────────────────────────────────────────────────
 
 class ConfidenceLevel(str, Enum):
-    VERY_HIGH = "very_high"
-    HIGH      = "high"
-    MEDIUM    = "medium"
-    LOW       = "low"
+    HIGH = "high"
+    LOW  = "low"
 
 
 class Strategy(str, Enum):
@@ -140,6 +137,13 @@ class LLMClassification:
 
 
 @dataclass
+class AnswerEvaluation:
+    answer: str
+    answer_confidence: str   # "high" | "medium" | "low"
+    uncertain_parts: str
+
+
+@dataclass
 class AgentResponse:
     strategy: Strategy
     should_respond: bool
@@ -149,6 +153,8 @@ class AgentResponse:
     reasoning: str
     is_compound: bool = False
     sub_labels: List[str] = field(default_factory=list)
+    answer_confidence: str = ""
+    uncertain_parts: str = ""
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -531,18 +537,15 @@ class InquiryAgent:
 
 ## 신뢰도 (confidence_level) 판단 요소:
 ① 문의 명확성   — 무엇을 묻는지 텍스트만 봐도 알 수 있는가
-② 카테고리 단일성 — 10개 중 딱 하나에만 해당하는가 (두 카테고리 경계에 걸치지 않는가)
-③ 답변 가능성   — 문의 맥락 + 위의 사전 지식/일정 정보를 합쳐서 지금 당장 답변 가능한가
-                  (schedule.json에 날짜·정책이 명시되어 있거나, prior_knowledge에 규정이 있으면 충족)
+② 카테고리 단일성 — 10개 중 딱 하나에만 해당하는가
+   (복합 문의로 sub_label을 명확히 식별 가능한 경우는 ② 충족으로 간주)
 
 레벨:
-- very_high : ①②③ 모두 충족 — 사전 지식/일정에 답이 명시되어 있고 문의 맥락도 충분
-- high      : ①② 충족, ③ 일부 부족 — 문의 맥락이 조금 부족하나 RAG로 보완 가능한 수준
-- medium    : ①② 충족, ③ 불확실 — KB/일정에 없거나 개인 상황 확인이 필요해 운영자 검토 권장
-- low       : ① 또는 ② 미충족 — 아래 중 하나에 해당:
-              · 문의 내용이 너무 짧거나 불명확해 무엇을 묻는지 파악 불가
-              · 두 카테고리 모두 동등하게 해당되어 분류 불가
-              · 운영자만 접근 가능한 개인 데이터(점수·처리 상태·계정 이력)가 있어야만 답변 가능
+- high : ①② 모두 충족
+- low  : ① 또는 ② 미충족 — 아래 중 하나에 해당:
+         · 문의 내용이 너무 짧거나 불명확해 무엇을 묻는지 파악 불가
+         · 두 카테고리 모두 동등하게 해당되어 분류 불가
+         · 운영자만 접근 가능한 개인 데이터(점수·처리 상태·계정 이력)가 있어야만 답변 가능
 
 ## 복합 문의 감지
 문의 내에 성격이 서로 다른 카테고리의 질문이 2개 이상 포함된 경우:
@@ -554,7 +557,7 @@ class InquiryAgent:
 ## 출력 형식 (JSON만 출력, 다른 텍스트 없이)
 {{
   "label": "LABEL_NAME",
-  "confidence_level": "very_high" | "high" | "medium" | "low",
+  "confidence_level": "high" | "low",
   "rationale": "분류 근거 한 줄",
   "is_compound": false,
   "sub_labels": []
@@ -618,8 +621,6 @@ class InquiryAgent:
 
         if label in GROUP1 or confidence == ConfidenceLevel.LOW:
             return Strategy.NO_RESPONSE, False
-        if confidence == ConfidenceLevel.MEDIUM:
-            return Strategy.HUMAN_REVIEW, True
         return Strategy.TOOL_RAG, True
 
     # ── RAG: FAISS 벡터 검색 기반 KB 검색 ───────────────────────
@@ -687,17 +688,13 @@ class InquiryAgent:
         self,
         inquiry: Dict,
         label: InquiryLabel,
-        confidence: ConfidenceLevel,
         kb_context: str,
-        is_draft: bool = None,
         compound_labels: List[InquiryLabel] = None,
         personal_context: str = "",
-    ) -> str:
+    ) -> AnswerEvaluation:
         title   = inquiry.get('title', '')
         content = self._strip_html(inquiry.get('content', ''))
         lang    = self.detect_language(title + " " + content)
-        if is_draft is None:
-            is_draft = (confidence == ConfidenceLevel.MEDIUM)
 
         prior_knowledge = self._prior_knowledge_section()
         schedule        = self._schedule_section()
@@ -717,7 +714,6 @@ class InquiryAgent:
         personal_section = f"\n{personal_context}\n" if personal_context else ""
 
         system_prompt = f"""너는 AI Talent Lab 문의 답변 Agent야.
-{'※ 이 답변은 운영자 검토용 초안이야. [초안] 태그로 시작해.' if is_draft else ''}
 {personal_section}
 {prior_knowledge}
 
@@ -729,7 +725,20 @@ class InquiryAgent:
 - 인사말로 시작: {greetings.get(lang, greetings['ko'])}
 - 아래 KB 정보를 우선 참고해서 답변해. KB 정보에 있는 내용은 그대로 활용해.
 - KB 정보에 없는 내용은 추측하지 말고 "확인 후 안내드리겠습니다"로 마무리해.
-- 답변은 간결하고 명확하게. 마지막에 "감사합니다." 로 끝낼 것."""
+- 답변은 간결하고 명확하게. 마지막에 "감사합니다." 로 끝낼 것.
+
+[답변 신뢰도 자체 평가]
+답변 작성 후, 아래 기준으로 answer_confidence를 판단해:
+- high  : KB 정보에 명확한 근거가 있어 답변이 완결됨
+- medium: KB 정보로 부분 답변 가능하나 운영자 확인이 필요한 부분 존재
+- low   : KB 정보에 근거가 부족해 추측성 답변이 됨
+
+## 출력 형식 (JSON만 출력, 다른 텍스트 없이)
+{{
+  "answer": "답변 텍스트",
+  "answer_confidence": "high" | "medium" | "low",
+  "uncertain_parts": "확신 없는 부분 설명 (없으면 빈 문자열)"
+}}"""
 
         user_content = f"""[문의]
 제목: {title}
@@ -747,9 +756,20 @@ class InquiryAgent:
                     {"role": "user",   "content": user_content},
                 ],
             )
-            return response.choices[0].message.content.strip()
+            raw = response.choices[0].message.content.strip()
+            json_match = re.search(r'\{.*\}', raw, re.DOTALL)
+            result = json.loads(json_match.group() if json_match else raw)
+            return AnswerEvaluation(
+                answer=result.get("answer", ""),
+                answer_confidence=result.get("answer_confidence", "medium"),
+                uncertain_parts=result.get("uncertain_parts", ""),
+            )
         except Exception as e:
-            return f"답변 생성 오류: {e}"
+            return AnswerEvaluation(
+                answer=f"답변 생성 오류: {e}",
+                answer_confidence="low",
+                uncertain_parts=str(e),
+            )
 
     # ── 메인 처리 흐름 ────────────────────────────────────────────
 
@@ -806,23 +826,55 @@ class InquiryAgent:
         else:
             kb_context, max_rag_score = self._build_kb_context(classification.label, inquiry_text, similarity_only=True)
 
-        # RAG 유사도가 낮으면 human_review로 다운그레이드 (tool_rag인 경우에만)
+        # 1차 strategy 결정: RAG 유사도 기반 (tool_rag인 경우에만)
         if strategy == Strategy.TOOL_RAG and max_rag_score < RAG_CONFIDENCE_THRESHOLD:
             strategy = Strategy.HUMAN_REVIEW
             classification.rationale += (
                 f" [RAG 유사도 낮음: {max_rag_score:.3f} < {RAG_CONFIDENCE_THRESHOLD}]"
             )
 
-        # strategy 기준으로 is_draft 결정:
-        # MEDIUM → 항상 초안, TOOL_RAG→HUMAN_REVIEW 다운그레이드된 경우도 초안
-        answer = self._generate_answer(
-            inquiry, classification.label, classification.confidence_level, kb_context,
-            is_draft=(strategy == Strategy.HUMAN_REVIEW),
+        # 답변 생성 + 자체 평가 (LLM이 실제 KB context를 보고 신뢰도 판단)
+        eval_result = self._generate_answer(
+            inquiry, classification.label, kb_context,
             compound_labels=compound_labels_for_rag,
             personal_context=personal_context,
         )
 
-        # history 기록 (label 저장)
+        # 2차 분기: 답변 신뢰도 기반 (다운그레이드만, 업그레이드 없음)
+        answer_conf = eval_result.answer_confidence
+        if answer_conf == "low":
+            strategy = Strategy.NO_RESPONSE
+        elif answer_conf == "medium" and strategy == Strategy.TOOL_RAG:
+            strategy = Strategy.HUMAN_REVIEW
+
+        # human_review면 [초안] 태그 추가
+        answer_text = eval_result.answer
+        if strategy == Strategy.HUMAN_REVIEW:
+            answer_text = f"[초안] {answer_text}"
+
+        # human_review 이후 should_respond 결정
+        if strategy == Strategy.NO_RESPONSE:
+            self.inquiry_history.append({
+                'inquiry': inquiry,
+                'label': classification.label.value,
+                'strategy': strategy.value,
+                'has_admin_answer': False,
+                'admin_answers': [],
+            })
+            return AgentResponse(
+                strategy=strategy,
+                should_respond=False,
+                label=classification.label,
+                confidence_level=classification.confidence_level,
+                answer=None,
+                reasoning=classification.rationale + f" [답변 신뢰도 낮음: {eval_result.uncertain_parts}]",
+                is_compound=classification.is_compound,
+                sub_labels=classification.sub_labels,
+                answer_confidence=answer_conf,
+                uncertain_parts=eval_result.uncertain_parts,
+            )
+
+        # history 기록
         self.inquiry_history.append({
             'inquiry': inquiry,
             'label': classification.label.value,
@@ -836,10 +888,12 @@ class InquiryAgent:
             should_respond=True,
             label=classification.label,
             confidence_level=classification.confidence_level,
-            answer=answer,
+            answer=answer_text,
             reasoning=classification.rationale,
             is_compound=classification.is_compound,
             sub_labels=classification.sub_labels,
+            answer_confidence=answer_conf,
+            uncertain_parts=eval_result.uncertain_parts,
         )
 
     # ── history 로드 (train + test 모두 지원) ─────────────────────
