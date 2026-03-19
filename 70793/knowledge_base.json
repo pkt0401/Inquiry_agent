@@ -88,8 +88,12 @@
       }
     ],
     "platform_features": {
-      "ide": "웹 기반 IDE 제공. 하단 console에서 파이썬 파일 실행 및 결과 확인 가능. Streamlit 앱 실행 지원. SKT망 등 외부망에서도 사이트 접속 및 콘솔 웹소켓이 허용된 환경이면 웹 IDE에서 개발 가능.",
+      "dev_environments": "개발환경은 Jupyter(JupyterLab)와 웹 IDE 두 가지 제공. Jupyter는 실습 강의에서 사용하며 노트북 셀 단위 실행. 웹 IDE는 최종과제 개발에 사용하며 파일 트리·에디터·콘솔 구조.",
+      "ide": "웹 기반 IDE 제공. 하단 console에서 파이썬 파일 실행 및 결과 확인 가능. Streamlit 실행 버튼으로 바로 앱 실행 가능. SKT망 등 외부망에서도 사이트 접속 및 콘솔 웹소켓이 허용된 환경이면 웹 IDE에서 개발 가능.",
+      "code_review": "웹 IDE 내 '코드 리뷰 요청' 버튼으로 AI 코드 리뷰 요청 가능. 하루 3회로 제한됨.",
+      "env_vars": "플랫폼(Jupyter/IDE 모두)에서 Azure OpenAI 환경변수를 자동으로 제공. AOAI_API_KEY, AOAI_ENDPOINT, AOAI_DEPLOY_GPT4O, AOAI_DEPLOY_GPT4O_MINI, AOAI_DEPLOY_EMBED_3_LARGE, AOAI_DEPLOY_EMBED_3_SMALL 등을 os.getenv()로 바로 사용 가능. 수동 설정 불필요.",
       "virtual_env": "플랫폼이 자동으로 가상환경을 설정함. 사용자가 직접 venv 생성 시 속도 저하·로딩 문제 발생 가능.",
+      "package_install": "Jupyter 환경에서는 셀 내 !pip install [패키지명]으로 설치. 웹 IDE 환경에서는 console에서 pip install [패키지명]으로 설치. 플랫폼 가상환경 내에서 설치해야 정상 동작.",
       "assignment_submission": "과제 제출 탭에서 제출. 기획 설계 문서(1·2단계)와 소스코드(3단계) 각각 여러 번 제출 가능.",
       "jupyter_files": "주피터 파일은 별도 제공하지 않으며, 웹 환경 내 실습 권장."
     },
@@ -101,8 +105,9 @@
       "AI Bootcamp 수료 시 AI Literacy도 동시에 수료 처리됨.",
       "플랫폼 IDE 내에서 직접 가상환경 생성 시 속도 저하·로딩 문제가 발생할 수 있어 비권장.",
       "실습 파일(주피터 노트북)은 다운로드 제공 안 함. 웹 환경 내에서만 실습.",
-      "Azure OpenAI 사용 시 AZURE_OPENAI_API_KEY 또는 AZURE_OPENAI_AD_TOKEN 환경변수 설정 필요.",
+      "플랫폼(Jupyter/IDE) 내에서는 Azure OpenAI 환경변수(AOAI_API_KEY, AOAI_ENDPOINT 등)가 자동 제공되어 별도 설정 없이 os.getenv()로 바로 사용 가능.",
       "웹 IDE 개발환경에서는 SKT망 등 외부망에서도 API 사용 및 개발 가능. 단, 로컬 환경 개발 시 사내망 외에서 제공 API Key 사용 및 비용 지원은 불가.",
+      "웹 IDE 내 코드 리뷰 요청은 하루 3회로 제한됨.",
       "AI Literacy는 상시 오픈 과정으로 기수 구분 없이 언제든 수강 가능. AI Bootcamp는 기수제로 운영되어 기수별 모집·수강 기간이 정해져 있으며, 해당 기간에만 수강 및 과제 제출 가능.",
       "AI Bootcamp는 이전 기수 수강 이력과 무관하게 새로운 기수에 재참여 가능. 동일 과정을 여러 기수에 걸쳐 반복 수강할 수 있음.",
       "AI Bootcamp 최종과제 평가는 코드 리뷰 내 5가지 항목과 동일한 기준으로 진행. 재제출 시 마지막 제출 코드 기준으로 최종 평가. 필수 기술요소 충실 활용 여부가 핵심 평가 기준.",
@@ -112,7 +117,8 @@
       "인증시험은 신청 후 시험 당일 오픈. AX College 공지 참조 권장.",
       "AI Literacy 인증시험은 온라인 응시가 기본이며, 오프라인 응시는 별도 요청 시 가능. 단, 응시는 정해진 시험 일정에만 가능하며 일정 외에는 응시할 수 없음.",
       "AI Literacy [VOD] 수강신청은 별도로 불필요. 인증시험에 합격하면 AI Literacy 인증이 자동 부여됨. AX College의 VOD 과정 수강신청을 따로 할 필요 없음.",
-      "AI Literacy 인증 완료 전이어도 AI Bootcamp 수강신청 가능. AX College에서 'AI Bootcamp'로 검색 후 원하는 교육일정 선택하여 신청. 입과자 대상으로 플랫폼 내 AI Bootcamp 버튼이 활성화되며 별도 안내 예정."
+      "AI Literacy 인증 완료 전이어도 AI Bootcamp 수강신청 가능. AX College에서 'AI Bootcamp'로 검색 후 원하는 교육일정 선택하여 신청. 입과자 대상으로 플랫폼 내 AI Bootcamp 버튼이 활성화되며 별도 안내 예정.",
+      "비밀번호는 수강생이 직접 초기화 가능. 운영자 조치 불필요."
     ]
   },
   "label_examples": {
@@ -123,6 +129,9 @@
         "수강 기간 설정 오류로 강의 접근 불가",
         "응시 자격 확인 요청",
         "계정·권한 직접 수정 요청"
+      ],
+      "exclusions": [
+        "비밀번호 초기화 — 수강생이 직접 가능하므로 ACCOUNT_ACTION_REQUIRED 아님. SERVICE_GUIDE로 분류."
       ],
       "qa_examples": []
     },
@@ -284,6 +293,11 @@
           "answer": "인증시험 응시자 명단 확정 후 안내메일이 발송되며, 발송 후 추가 실습 횟수 처리가 완료됩니다."
         },
         {
+          "title": "비밀번호 초기화 문의",
+          "question": "비밀번호를 잊어버렸는데 어떻게 초기화하나요?",
+          "answer": "안녕하세요. 비밀번호는 로그인 화면에서 직접 초기화하실 수 있습니다. 감사합니다."
+        },
+        {
           "title": "마이프로필에 이수이력 갱신 여부 문의",
           "question": "마이 프로필 이수이력 갱신은 언제쯤 되나요? 수료 완료했는데 진행중으로 표시됩니다.",
           "answer": "AI Literacy의 경우 인증시험 이력을 통해 수료 여부 확인이 가능하며, 이수이력 내 표시는 인증과 무관합니다. 마스터프로젝트 수료 여부는 이메일로 별도 안내되며 사내 시스템에 반영됩니다. 플랫폼 내 이수이력 표시는 해당 연도 기수 결과 발표 시점에 업데이트될 예정입니다."
@@ -326,7 +340,7 @@
         {
           "title": "Azure OpenAI API Key 관련 오류",
           "question": "OpenAIError: Missing credentials. Please pass one of api_key, azure_ad_token, azure_ad_token_provider, or the AZURE_OPENAI_API_KEY or AZURE_OPENAI_AD_TOKEN environment variables.",
-          "answer": "AZURE_OPENAI_API_KEY 또는 AZURE_OPENAI_AD_TOKEN 환경변수가 설정되어 있는지 확인해주세요.\n터미널에서 'set AZURE_OPENAI_API_KEY=your_key' 명령으로 설정하거나, .env 파일에 추가하고 python-dotenv로 로드하시면 됩니다."
+          "answer": "플랫폼 환경에서는 AOAI_API_KEY, AOAI_ENDPOINT 등 환경변수가 자동으로 제공됩니다. os.getenv('AOAI_API_KEY'), os.getenv('AOAI_ENDPOINT') 형태로 읽어서 사용하세요. 강의 실습 코드를 참고하시면 됩니다."
         },
         {
           "title": "ModuleNotFoundError 에러",
@@ -338,9 +352,9 @@
   },
   "error_solutions": [
     {
-      "error_pattern": "missing credentials|azure_openai.*key|api.?key|openai_api_key",
-      "title": "Azure OpenAI API Key 미설정",
-      "solution": "환경변수에 AZURE_OPENAI_API_KEY 또는 AZURE_OPENAI_AD_TOKEN을 설정해주세요. IDE console에서 'set AZURE_OPENAI_API_KEY=your_key' 명령을 실행하거나, .env 파일에 추가 후 python-dotenv로 로드하세요."
+      "error_pattern": "missing credentials|aoai.*key|api.?key|openai_api_key|azure_openai.*key",
+      "title": "Azure OpenAI API Key 오류",
+      "solution": "플랫폼 환경(Jupyter/IDE)에서는 AOAI_API_KEY, AOAI_ENDPOINT 등 환경변수가 자동으로 제공됩니다. os.getenv('AOAI_API_KEY') 형태로 읽어서 사용하세요. 로컬 환경에서 개발 중이라면 사내망 외에서는 플랫폼 제공 API Key 사용이 불가하므로 플랫폼 IDE에서 개발하시길 권장합니다."
     },
     {
       "error_pattern": "modulenotfounderror|importerror|no module named",

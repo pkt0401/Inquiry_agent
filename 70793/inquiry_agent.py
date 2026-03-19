@@ -258,7 +258,7 @@ class VectorStore:
         q /= max(np.linalg.norm(q), 1e-8)
         q = q.reshape(1, -1)
 
-        k = min(top_k * 6, self.index.ntotal)
+        k = min(top_k if similarity_only else top_k * 6, self.index.ntotal)
         scores, idxs = self.index.search(q, k)
 
         if similarity_only:
@@ -628,7 +628,7 @@ class InquiryAgent:
     def _build_kb_context(self, label: InquiryLabel, inquiry_text: str,
                           similarity_only: bool = False) -> Tuple[str, float]:
         """
-        FAISS 벡터 검색으로 해당 label의 유사 Q&A 최대 3개 + 에러 솔루션 보완.
+        FAISS 벡터 검색으로 해당 label의 유사 Q&A 최대 5개 + 에러 솔루션 보완.
         vector_store가 없으면 키워드 폴백 사용.
         similarity_only=True 이면 label 무시하고 순수 유사도 상위 문서를 가져옴.
         반환: (context 문자열, 최고 유사도 점수)  — 유사도가 없으면 0.0
@@ -1106,8 +1106,8 @@ def main():
     test_cases = rng.sample(has_answer, n)
     test_ids   = {inq['id'] for inq in test_cases}
 
-    # 테스트셋을 제외한 나머지를 RAG pool로 사용
-    rag_pool = [inq for inq in all_inquiries if inq['id'] not in test_ids]
+    # 테스트셋을 제외한 나머지를 RAG pool로 사용 (관리자 답변 있는 것만)
+    rag_pool = [inq for inq in all_inquiries if inq['id'] not in test_ids and inq['id'] in comment_map]
     print(f"테스트셋: {len(test_cases)}건 / RAG pool: {len(rag_pool)}건")
 
     agent.load_inquiry_history(rag_pool, all_comments, pre_label=False)
