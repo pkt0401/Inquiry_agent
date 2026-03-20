@@ -29,6 +29,7 @@ from enum import Enum
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 from user_db import UserContextDB
+from tools import GROUP3_LABELS, get_tool_type, execute_tool_action
 load_dotenv()
 # ──────────────────────────────────────────────────────────────────
 # HTML 전처리
@@ -87,6 +88,10 @@ class InquiryLabel(str, Enum):
     ASSIGNMENT_DEVELOPMENT  = "ASSIGNMENT_DEVELOPMENT"    # 과제 구현 방법·개발 방향
     CODE_LOGIC_ERROR        = "CODE_LOGIC_ERROR"          # 코드 에러·API 호출·파싱 오류
 
+    # Group 3 — tool_action (에이전트 직접 실행)
+    CODE_REVIEW_RESET       = "CODE_REVIEW_RESET"         # 코드 리뷰 횟수 초기화 요청
+    LITERACY_PRACTICE_RESET = "LITERACY_PRACTICE_RESET"   # AI Literacy 사전연습 횟수 복구 요청
+
 
 GROUP1 = {
     InquiryLabel.ACCOUNT_ACTION_REQUIRED,
@@ -103,6 +108,7 @@ GROUP2 = {
     InquiryLabel.ASSIGNMENT_DEVELOPMENT,
     InquiryLabel.CODE_LOGIC_ERROR,
 }
+
 
 # RAG 유사도 임계값: 이 값 미만이면 tool_rag → human_review 다운그레이드
 RAG_CONFIDENCE_THRESHOLD = 0.65
@@ -121,6 +127,7 @@ class Strategy(str, Enum):
     NO_RESPONSE   = "no_response"
     HUMAN_REVIEW  = "human_review"
     TOOL_RAG      = "tool_rag"
+    TOOL_ACTION   = "tool_action"   # 에이전트 직접 실행 (DB 조작 등)
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -155,6 +162,8 @@ class AgentResponse:
     sub_labels: List[str] = field(default_factory=list)
     answer_confidence: str = ""
     uncertain_parts: str = ""
+    tool_result: Optional[Dict] = None   # TOOL_ACTION 실행 결과
+    tool_type: str = ""                  # "auto" | "approval" | ""
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -475,6 +484,8 @@ class InquiryAgent:
             ("SERVICE_GUIDE",           "플랫폼 이용 가이드"),
             ("ASSIGNMENT_DEVELOPMENT",  "과제 개발 방향"),
             ("CODE_LOGIC_ERROR",        "코드·API 오류"),
+            ("CODE_REVIEW_RESET",       "코드 리뷰 횟수 초기화"),
+            ("LITERACY_PRACTICE_RESET", "AI Literacy 사전연습 횟수 복구"),
         ]
 
         for label_key, short_name in all_labels:
@@ -506,8 +517,15 @@ class InquiryAgent:
 
         personal_section = f"\n{personal_context}\n" if personal_context else ""
 
+        # label_descs를 그룹별로 분리
+        _g1_end = label_descs.find('- COURSE_INFO')
+        _g2_end = label_descs.find('- CODE_REVIEW_RESET')
+        label_descs_g1 = label_descs[:_g1_end].strip() if _g1_end != -1 else label_descs
+        label_descs_g2 = label_descs[_g1_end:_g2_end].strip() if _g1_end != -1 and _g2_end != -1 else ""
+        label_descs_g3 = label_descs[_g2_end:].strip() if _g2_end != -1 else ""
+
         system_prompt = f"""너는 AI Talent Lab 문의 분류 Agent야.{personal_section}
-문의를 읽고 아래 10개 카테고리 중 하나로 분류하고, 신뢰도를 판단해.
+문의를 읽고 아래 카테고리 중 하나로 분류하고, 신뢰도를 판단해.
 
 {prior_knowledge}
 
@@ -516,10 +534,13 @@ class InquiryAgent:
 ## 카테고리 (label) 정의
 
 ### Group 1 — 운영자 에스컬레이션 (RAG 답변 생성 안 함):
-{label_descs.split('- COURSE_INFO')[0]}
+{label_descs_g1}
 
 ### Group 2 — RAG 기반 답변 시도:
-{"- COURSE_INFO" + label_descs.split('- COURSE_INFO')[1] if '- COURSE_INFO' in label_descs else ""}
+{label_descs_g2}
+
+### Group 3 — 에이전트 직접 실행 (DB 조작):
+{label_descs_g3}
 
 ## 분류 판단 기준
 
@@ -534,6 +555,14 @@ class InquiryAgent:
 **CODE_LOGIC_ERROR vs ASSIGNMENT_DEVELOPMENT 구분:**
 - 코드 에러 메시지, API 호출 실패, 라이브러리 오류 → CODE_LOGIC_ERROR
 - 과제 설계 방향, 아키텍처, 구현 접근법 → ASSIGNMENT_DEVELOPMENT
+
+**CODE_REVIEW_RESET 판단:**
+- "코드 리뷰 횟수 초기화", "리뷰 횟수 리셋", "리뷰 다시", "코드 리뷰 초기화" 등 명시적 요청 → CODE_REVIEW_RESET
+- ACCOUNT_ACTION_REQUIRED와 혼동 주의: 코드 리뷰 횟수 리셋은 에이전트가 직접 처리 가능하므로 CODE_REVIEW_RESET으로 분류
+
+**LITERACY_PRACTICE_RESET 판단:**
+- "AI Literacy 사전연습 횟수 복구", "모의 인증 횟수 원복", "실습 횟수 잘못 차감", "연습 횟수 돌려주세요" 등 → LITERACY_PRACTICE_RESET
+- ACCOUNT_ACTION_REQUIRED와 혼동 주의: 사전연습 횟수 복구는 에이전트가 직접 처리 가능하므로 LITERACY_PRACTICE_RESET으로 분류
 
 ## 신뢰도 (confidence_level) 판단 요소:
 ① 문의 명확성   — 무엇을 묻는지 텍스트만 봐도 알 수 있는가
@@ -619,6 +648,8 @@ class InquiryAgent:
                 # Group2만 2-3개 → tool_rag (각 label별 RAG 합산, process_inquiry에서 처리)
                 return Strategy.TOOL_RAG, True
 
+        if label.value in GROUP3_LABELS:
+            return Strategy.TOOL_ACTION, True
         if label in GROUP1 or confidence == ConfidenceLevel.LOW:
             return Strategy.NO_RESPONSE, False
         return Strategy.TOOL_RAG, True
@@ -663,7 +694,7 @@ class InquiryAgent:
                              f"{ex['question'][:200]}\nA: {ex['answer'][:300]}")
 
         # ② 에러 솔루션 정규식 보완 (CODE_LOGIC_ERROR 또는 에러 키워드 감지 시)
-        if label == InquiryLabel.CODE_LOGIC_ERROR or re.search(r'error|traceback|오류|에러', text_lower):
+        if label == InquiryLabel.CODE_LOGIC_ERROR or re.search(r'error|traceback|오류|에러|리뷰.*실패|실패.*리뷰|venv', text_lower):
             for sol in self.kb.get("error_solutions", []):
                 if re.search(sol["error_pattern"], inquiry_text, re.I):
                     parts.append(f"[에러 가이드]\n{sol['title']}: {sol['solution']}")
@@ -802,6 +833,33 @@ class InquiryAgent:
                 reasoning=classification.rationale,
                 is_compound=classification.is_compound,
                 sub_labels=classification.sub_labels,
+            )
+
+        # Step 3: Tool Action (GROUP3) — tools.py 실행기 위임
+        if strategy == Strategy.TOOL_ACTION:
+            answer_text, tool_result, tool_type = execute_tool_action(
+                classification.label.value,
+                inquiry.get("author_id"),
+                inquiry_text,
+                self.user_db,
+            )
+            self.inquiry_history.append({
+                "inquiry":          inquiry,
+                "label":            classification.label.value,
+                "strategy":         strategy.value,
+                "has_admin_answer": False,
+                "admin_answers":    [],
+            })
+            return AgentResponse(
+                strategy=strategy,
+                should_respond=True,
+                label=classification.label,
+                confidence_level=classification.confidence_level,
+                answer=answer_text,
+                reasoning=classification.rationale,
+                answer_confidence="high" if tool_result.get("success") else "low",
+                tool_result=tool_result,
+                tool_type=tool_type,
             )
 
         # RAG 검색
@@ -1059,13 +1117,20 @@ def _load_dotenv():
             break
 
 
-def _word_overlap(a: str, b: str) -> float:
-    """두 텍스트의 단어 집합 overlap 비율 (Jaccard)."""
-    wa = set(a.split())
-    wb = set(b.split())
-    if not wa or not wb:
+def _answer_similarity(vs: 'VectorStore', a: str, b: str) -> float:
+    """두 답변 텍스트의 임베딩 코사인 유사도."""
+    if not a or not b:
         return 0.0
-    return len(wa & wb) / len(wa | wb)
+    for text in (a, b):
+        key = vs._key(text[:8000])
+        if key not in vs._emb_cache:
+            resp = vs._client.embeddings.create(model=vs.EMBED_MODEL, input=text[:8000])
+            vs._emb_cache[key] = resp.data[0].embedding
+    va = np.array(vs._emb_cache[vs._key(a[:8000])], dtype=np.float32)
+    vb = np.array(vs._emb_cache[vs._key(b[:8000])], dtype=np.float32)
+    va /= max(np.linalg.norm(va), 1e-8)
+    vb /= max(np.linalg.norm(vb), 1e-8)
+    return float(np.dot(va, vb))
 
 
 def main():
@@ -1118,6 +1183,7 @@ def main():
         Strategy.NO_RESPONSE:  "운영자 에스컬레이션",
         Strategy.HUMAN_REVIEW: "RAG 초안 + 운영자 검토",
         Strategy.TOOL_RAG:     "RAG 자동 답변 게시",
+        Strategy.TOOL_ACTION:  "에이전트 직접 실행",
     }
 
     for i, test_inquiry in enumerate(test_cases, 1):
@@ -1164,9 +1230,9 @@ def main():
 
         if actual_text:
             print(f"\n[실제 관리자 답변]\n{actual_text[:400]}{'...' if len(actual_text) > 400 else ''}")
-            if response.answer:
-                overlap = _word_overlap(response.answer, actual_text)
-                print(f"\n[단어 overlap]  {overlap*100:.1f}%")
+            if response.answer and agent.vector_store:
+                sim = _answer_similarity(agent.vector_store, response.answer, actual_text)
+                print(f"\n[답변 유사도]  {sim*100:.1f}%")
 
 
 if __name__ == "__main__":

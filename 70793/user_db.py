@@ -48,7 +48,30 @@ CREATE TABLE IF NOT EXISTS enrollments (
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (cohort_id) REFERENCES cohorts(id)
 );
+
+CREATE TABLE IF NOT EXISTS code_review_logs (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL,
+    review_dt   TEXT NOT NULL,   -- 'YYYY-MM-DD' (날짜)
+    used_count  INTEGER NOT NULL DEFAULT 0,
+    reset_count INTEGER NOT NULL DEFAULT 0,   -- 당일 리셋 횟수
+    last_reset_at TEXT,                        -- 마지막 리셋 시각 (ISO 8601)
+    UNIQUE (user_id, review_dt)
+);
+
+CREATE TABLE IF NOT EXISTS practice_sessions (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id         INTEGER NOT NULL,
+    granted_count   INTEGER NOT NULL DEFAULT 0,   -- 누적 부여된 연습 횟수
+    used_count      INTEGER NOT NULL DEFAULT 0,   -- 누적 사용된 연습 횟수
+    last_restore_at TEXT,                          -- 마지막 복구 시각 (ISO 8601)
+    UNIQUE (user_id)
+);
 """
+
+CODE_REVIEW_DAILY_LIMIT = 10
+PRACTICE_INITIAL_COUNT   = 100  # 사전연습 초기 부여 횟수
+PRACTICE_DEFAULT_RESTORE = 1    # 복구 요청 시 기본 복구 횟수 (잘못 클릭 1회 원복)
 
 STATUS_KO = {
     "completed":   "수료",
@@ -93,12 +116,11 @@ KNOWN_AUTHOR_IDS = [
 
 COHORT_DATA = [
     # (program, cohort_name, start_dt, end_dt)
-    ("AI Bootcamp", "9기",  "2025-06-02", "2025-07-11"),
-    ("AI Bootcamp", "10기", "2025-08-04", "2025-09-12"),
-    ("AI Bootcamp", "11기", "2025-10-06", "2025-11-14"),
+    ("AI Bootcamp", "10기", "2025-12-25", "2026-01-09"),
+    ("AI Bootcamp", "11기", "2026-01-19", "2026-02-13"),
     ("AI Bootcamp", "12기", "2026-02-23", "2026-03-20"),   # 현재 진행 중 (schedule.json 기준)
     ("AI Literacy", "상시", "2024-01-01", "2099-12-31"),    # 상시 운영
-    ("AI Master Project", "1기", "2025-04-01", "2025-07-31"),
+    ("AI Master Project", "4기", "2026-01-26", "2026-03-27"),
 ]
 
 
@@ -274,6 +296,134 @@ class UserContextDB:
             "current_cohort":  current["cohort"],
             "is_retake":       is_retake,
             "retake_from":     retake_from,
+        }
+
+    # ── 코드 리뷰 횟수 관리 ─────────────────────────────────────────
+
+    def get_review_count_today(self, user_id: int, date_str: str = None) -> Dict:
+        """
+        user_id의 오늘 코드 리뷰 사용 현황 반환.
+        date_str: 'YYYY-MM-DD' (기본: 오늘)
+
+        반환 예:
+        {
+            "user_id": 1256,
+            "date": "2026-03-20",
+            "used_count": 3,
+            "remaining": 7,
+            "daily_limit": 10,
+            "reset_count": 0,
+        }
+        """
+        import datetime
+        if date_str is None:
+            date_str = datetime.date.today().isoformat()
+
+        conn = get_connection(self._db_path)
+        row = conn.execute(
+            "SELECT used_count, reset_count FROM code_review_logs WHERE user_id=? AND review_dt=?",
+            (user_id, date_str),
+        ).fetchone()
+        conn.close()
+
+        used = row["used_count"] if row else 0
+        reset_cnt = row["reset_count"] if row else 0
+        return {
+            "user_id":     user_id,
+            "date":        date_str,
+            "used_count":  used,
+            "remaining":   max(0, CODE_REVIEW_DAILY_LIMIT - used),
+            "daily_limit": CODE_REVIEW_DAILY_LIMIT,
+            "reset_count": reset_cnt,
+        }
+
+    def reset_review_count(self, user_id: int, date_str: str = None) -> Dict:
+        """
+        user_id의 당일 코드 리뷰 사용 횟수를 0으로 초기화.
+        date_str: 'YYYY-MM-DD' (기본: 오늘)
+
+        반환 예:
+        {
+            "success": True,
+            "user_id": 1256,
+            "date": "2026-03-20",
+            "prev_used": 3,
+            "reset_count": 1,   -- 누적 리셋 횟수
+        }
+        """
+        import datetime
+        if date_str is None:
+            date_str = datetime.date.today().isoformat()
+        now_iso = datetime.datetime.now().isoformat(timespec="seconds")
+
+        conn = get_connection(self._db_path)
+        row = conn.execute(
+            "SELECT used_count, reset_count FROM code_review_logs WHERE user_id=? AND review_dt=?",
+            (user_id, date_str),
+        ).fetchone()
+
+        prev_used = row["used_count"] if row else 0
+        new_reset_cnt = (row["reset_count"] if row else 0) + 1
+
+        conn.execute(
+            """
+            INSERT INTO code_review_logs (user_id, review_dt, used_count, reset_count, last_reset_at)
+            VALUES (?, ?, 0, ?, ?)
+            ON CONFLICT(user_id, review_dt) DO UPDATE SET
+                used_count    = 0,
+                reset_count   = reset_count + 1,
+                last_reset_at = excluded.last_reset_at
+            """,
+            (user_id, date_str, new_reset_cnt, now_iso),
+        )
+        conn.commit()
+        conn.close()
+
+        return {
+            "success":     True,
+            "user_id":     user_id,
+            "date":        date_str,
+            "prev_used":   prev_used,
+            "reset_count": new_reset_cnt,
+        }
+
+    def restore_practice_count(self, user_id: int, count: int = PRACTICE_DEFAULT_RESTORE) -> Dict:
+        """
+        user_id의 AI Literacy 사전연습 횟수를 count만큼 복구(추가 부여).
+
+        반환 예:
+        {
+            "success": True,
+            "user_id": 1256,
+            "restored": 1,
+            "granted_total": 3,
+        }
+        """
+        import datetime
+        now_iso = datetime.datetime.now().isoformat(timespec="seconds")
+
+        conn = get_connection(self._db_path)
+        conn.execute(
+            """
+            INSERT INTO practice_sessions (user_id, granted_count, used_count, last_restore_at)
+            VALUES (?, ?, 0, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                granted_count   = granted_count + ?,
+                last_restore_at = excluded.last_restore_at
+            """,
+            (user_id, count, now_iso, count),
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT granted_count FROM practice_sessions WHERE user_id=?", (user_id,)
+        ).fetchone()
+        conn.close()
+
+        return {
+            "success":       True,
+            "user_id":       user_id,
+            "restored":      count,
+            "granted_total": row["granted_count"] if row else count,
         }
 
     def build_personal_context_str(self, author_id: int) -> str:

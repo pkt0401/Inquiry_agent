@@ -111,7 +111,7 @@
 
 ---
 
-## 3. 카테고리 Labels — 10개
+## 3. 카테고리 Labels — 12개
 
 ### Group 1 — `no_response` (운영자 에스컬레이션)
 
@@ -132,6 +132,16 @@
 | `SERVICE_GUIDE` | 플랫폼 이용 방법, 가이드 요청 | "IDE 사용법 가이드 부탁드립니다.", "Bootcamp 최종과제 기획 및 설계 최초 양식 문의", "새로 오픈한 코드리뷰 사용 문의", "실습 환경에 파이썬 패키지 설치 문의" |
 | `ASSIGNMENT_DEVELOPMENT` | 과제 구현 방법, 개발 방향, 아키텍처 | "Azure OpenAI & LangChain 과제 개발 문의", "[Boot Camp] Sub-Graph 구조 관련 문의", "AI Bootcamp 최종과제 주제 문의드립니다.", "Bootcamp 최종과제 api key 관련 문의" |
 | `CODE_LOGIC_ERROR` | 코드 에러, API 호출·파싱·rate limit 오류 | "[Boot Camp] RAG 강의 Generation - Retriever 관련 질문", "sqlite문의", "지금 인베딩 동시 요청 초과 인가요?", "에러 해결이 안돼요", "강의 중 소스코드 문의" |
+
+### Group 3 — `tool_action` (에이전트 직접 실행)
+
+| Label | 해당 문의 | Tool 종류 | 실행 내용 |
+|-------|----------|----------|----------|
+| `CODE_REVIEW_RESET` | 코드 리뷰 횟수 초기화 요청 | AUTO_TOOL | `user_db.reset_review_count()` — 당일 사용 횟수 0으로 초기화, 하루 10회 재사용 가능 |
+| `LITERACY_PRACTICE_RESET` | AI Literacy 사전연습 횟수 복구 요청 | AUTO_TOOL | `user_db.restore_practice_count()` — 잘못 차감된 연습 횟수 복구 (기본 1회) |
+
+> AUTO_TOOL은 즉시 실행(저위험, 단순 DB 조작). APPROVAL_TOOL은 관리자 승인 후 실행 예정(추후 추가).
+> Group 3 라벨은 `ACCOUNT_ACTION_REQUIRED`와 혼동 주의 — 에이전트가 직접 처리 가능하므로 Group 3으로 분류.
 
 ---
 
@@ -187,14 +197,20 @@
 **코드가 결정하는 것**
 ```python
 # Step 2: 1차 strategy 결정 (우선순위 순)
-is_compound AND any(sub_label in GROUP1)                    → human_review   # Group1 포함 복합: 운영자 처리 필요
+label.value in GROUP3_LABELS                               → tool_action    # Group3: 에이전트 직접 실행 (즉시 종료)
+is_compound AND any(sub_label in GROUP1)                   → human_review   # Group1 포함 복합: 운영자 처리 필요
 is_compound AND all(sub_label in GROUP2) AND 2<=count<=3   → tool_rag       # Group2 복합 2-3개: multi-RAG 합산
 is_compound AND all(sub_label in GROUP2) AND count >= 4    → human_review   # Group2 복합 4개+: 복잡도 초과
 label in Group1 OR confidence == 'low'                     → no_response    # 운영자 에스컬레이션 (즉시 종료)
 confidence == 'high'                                       → tool_rag       # RAG 시도
 
-# Step 3: RAG 검색 (복합 Group2 2-3개는 sub_label별 각각 검색 후 합산)
-# 단일 문의:   kb_context, score = _build_kb_context(label, text)
+# Step 3 (tool_action 경로): tools.py 실행기 위임 후 즉시 반환
+# execute_tool_action(label_value, author_id, inquiry_text, user_db)
+# → AUTO_TOOL  : 즉시 DB 조작 + 답변 생성 (CODE_REVIEW_RESET, LITERACY_PRACTICE_RESET)
+# → APPROVAL_TOOL: 승인 대기 (추후 추가)
+
+# Step 3 (RAG 경로): RAG 검색 (복합 Group2 2-3개는 sub_label별 각각 검색 후 합산)
+# 단일 문의:    kb_context, score = _build_kb_context(label, text)
 # 복합 G2 문의: ctx_list = [_build_kb_context(lbl, text) for lbl in sub_labels]
 #               kb_context = join(ctx_list),  score = min(scores)
 
@@ -202,7 +218,7 @@ confidence == 'high'                                       → tool_rag       # 
 strategy == 'tool_rag' AND score < 0.65
     → strategy='human_review'
 
-# Step 5: 답변 신뢰도 기반 2차 분기 (다운그레이드만)
+# Step 5: 답변 신뢰도 기반 2차 분기 (다운그레이드만, tool_action 경로는 해당 없음)
 answer_confidence == 'low'    → strategy='no_response'   # KB 근거 부족, 에스컬레이션
 answer_confidence == 'medium' → strategy='human_review'  # 부분 답변 가능, 운영자 검토
 answer_confidence == 'high'   → 기존 strategy 유지       # 자동 게시
@@ -278,9 +294,9 @@ FAISS 검색 (top_k × 6 = 18개 후보, 유사도 순)
 history 문의에 휴리스틱 라벨(9개 regex)을 부여하는데, 어떤 패턴도 매칭되지 않으면 `label=None`.
 검색 시 동일 label 문서가 top_k에 못 미칠 때만 보조로 사용됨 (노이즈 최소화).
 
-### 검색 모드 비교 (`compare_rag_modes.py`)
+### 검색 모드 비교
 
-두 모드를 같은 문의에 대해 실행, 검색된 예시 + 생성 답변을 나란히 비교:
+두 모드는 브랜치 단위로 구분되며, `indiv_nolabel` 브랜치가 similarity-only를 기본값으로 사용:
 
 | 모드 | 설명 | 해당 브랜치 |
 |------|------|------------|
@@ -320,6 +336,8 @@ FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
 |---------|------|----------|
 | 수강생 수강 이력 | 등록 과정, 기수, 수료/진행중/미수료 상태 | `user_db.py` SQLite (`users`, `cohorts`, `enrollments` 테이블) |
 | 개인화 컨텍스트 주입 | 수강생별 맞춤 컨텍스트 → LLM 분류·답변 프롬프트에 주입 | `UserContextDB.build_personal_context_str()` |
+| 코드 리뷰 사용 현황 | 당일 코드 리뷰 사용 횟수·리셋 이력 | `user_db.py` SQLite (`code_review_logs` 테이블) — `CODE_REVIEW_RESET` Tool 실행 |
+| AI Literacy 연습 횟수 | 누적 부여·사용·복구 이력 | `user_db.py` SQLite (`practice_sessions` 테이블) — `LITERACY_PRACTICE_RESET` Tool 실행 |
 
 > 실서비스 전환 시 PostgreSQL 등으로 교체 가능 (SQLAlchemy 기반으로 변경하면 됨)
 
@@ -350,13 +368,13 @@ FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
 
 | 파일 | 브랜치 | 설명 |
 |------|--------|------|
-| `inquiry_agent.py` | 전체 | 메인 Agent (분류·RAG·답변 생성) |
-| `user_db.py` | indiv, indiv_nolabel | 수강생 개인화 DB (SQLite) |
+| `inquiry_agent.py` | 전체 | 메인 Agent (분류·RAG·답변 생성·strategy 결정) |
+| `user_db.py` | indiv, indiv_nolabel | 수강생 개인화 DB (SQLite) + Tool용 코드리뷰·연습횟수 관리 |
+| `tools.py` | indiv, indiv_nolabel | Group 3 Tool 정의 및 실행기 (AUTO_TOOL / APPROVAL_TOOL) |
 | `knowledge_base.json` | 전체 | 사전 지식 + 큐레이션 Q&A + 에러 솔루션 (static) |
 | `schedule.json` | 전체 | 기수별 수강 일정 + 인증시험 일정 (dynamic, 기수마다 갱신) |
 | `inquiry_all.json` | 전체 | 전체 문의 게시물 (110건, 기존+3월 신규 병합) — train+test 통합 소스 |
 | `inquiry_comment_all.json` | 전체 | 전체 문의 댓글 (125건) |
-| `compare_rag_modes.py` | 전체 | Mode A(label-aware) vs B(similarity-only) 비교 스크립트 |
 | `pipeline_viz.html` | 전체 | 전체 파이프라인 시각화 (브라우저에서 열기) |
 | `embeddings_cache.pkl` | 전체 | 임베딩 캐시 (재실행 시 API 미호출) |
 | `requirements.txt` | 전체 | `openai>=1.0.0`, `faiss-cpu==1.7.4`, `numpy>=1.24.0,<2` |

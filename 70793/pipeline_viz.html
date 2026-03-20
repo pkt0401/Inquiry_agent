@@ -122,6 +122,7 @@
   .s-red    { background: #2a1010; border: 1.5px solid #c0392b; }
   .s-yellow { background: #241f0a; border: 1.5px solid #c09010; }
   .s-green  { background: #0a1f10; border: 1.5px solid #27ae60; }
+  .s-teal   { background: #071a1e; border: 1.5px solid #0e8a8a; }
   .s-compound { background: #1a0f2a; border: 1.5px solid #9b59b6; }
 
   .badge {
@@ -136,6 +137,7 @@
   .badge-red    { background: #c0392b; color: #fff; }
   .badge-yellow { background: #c09010; color: #fff; }
   .badge-green  { background: #27ae60; color: #fff; }
+  .badge-teal   { background: #0e8a8a; color: #fff; }
   .badge-purple { background: #9b59b6; color: #fff; }
 
   .strategy-card .cond {
@@ -183,10 +185,11 @@
   .lp-lo { background: #c0392b; color: #fff; }
 
   /* label groups */
-  .label-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .label-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
   .label-group { border-radius: 8px; padding: 10px 14px; font-size: 0.76rem; line-height: 1.7; }
   .lg-red   { background: #200a0a; border: 1px solid #c0392b; }
   .lg-green { background: #0a1a0a; border: 1px solid #27ae60; }
+  .lg-teal  { background: #071a1e; border: 1px solid #0e8a8a; }
   .lg-title { font-weight: 700; margin-bottom: 4px; }
 
   /* RAG */
@@ -312,7 +315,7 @@
 
     <!-- 라벨 그룹 -->
     <div style="margin-top:16px;">
-      <div style="font-size:0.75rem; color:#7a9adf; font-weight:600; margin-bottom:6px;">카테고리 10개 (label)</div>
+      <div style="font-size:0.75rem; color:#7a9adf; font-weight:600; margin-bottom:6px;">카테고리 12개 (label)</div>
       <div class="label-grid">
         <div class="label-group lg-red">
           <div class="lg-title" style="color:#e74c3c;">Group 1 &mdash; no_response 대상</div>
@@ -329,6 +332,12 @@
           SERVICE_GUIDE<br>
           ASSIGNMENT_DEVELOPMENT<br>
           CODE_LOGIC_ERROR
+        </div>
+        <div class="label-group lg-teal">
+          <div class="lg-title" style="color:#1abfbf;">Group 3 &mdash; Tool 직접 실행</div>
+          CODE_REVIEW_RESET<br>
+          LITERACY_PRACTICE_RESET<br>
+          <span style="color:#5a9a9a; font-size:0.72rem; margin-top:4px; display:block;">AUTO_TOOL: 즉시 DB 조작<br>APPROVAL_TOOL: 승인 후 실행 (추후)</span>
         </div>
       </div>
     </div>
@@ -386,6 +395,18 @@
     <div class="box-body" style="margin-bottom:12px;">우선순위 순서로 평가 (위에서 아래로)</div>
 
     <div class="strategy-grid">
+
+      <!-- TOOL_ACTION -->
+      <div class="strategy-card s-teal">
+        <span class="badge badge-teal">tool_action</span><br>
+        <span style="font-size:1rem; font-weight:700; color:#1abfbf;">에이전트 직접 실행</span><br>
+        <span style="color:#aaa; font-size:0.75rem;">DB 조작 후 즉시 답변</span>
+        <div class="cond">
+          label ∈ <strong>Group 3</strong><br>
+          (최우선 — RAG 없이 즉시 처리)<br>
+          <span style="color:#5a9a9a; font-size:0.73rem;">tools.py 실행기 위임</span>
+        </div>
+      </div>
 
       <!-- NO_RESPONSE -->
       <div class="strategy-card s-red">
@@ -466,9 +487,33 @@
 
   <div class="arrow"></div>
 
-  <!-- STEP 3: RAG 검색 -->
+  <!-- STEP 3a: TOOL_ACTION 처리 (Group 3 경로) -->
+  <div class="box" style="background:#071a1e; border:1.5px solid #0e8a8a; max-width:700px;">
+    <div class="box-label" style="color:#1abfbf;">Step 3-A &nbsp;&middot;&nbsp; Group 3 경로만 &nbsp;|&nbsp; tools.py 실행기</div>
+    <div class="box-title" style="color:#1abfbf;">Tool Action 실행 &rarr; 즉시 반환</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
+      <div style="background:#0a2228; border:1px solid #0d7a7a; border-radius:8px; padding:10px 13px; font-size:0.78rem; line-height:1.55; color:#aadddd;">
+        <div style="font-weight:700; color:#1abfbf; margin-bottom:5px;">AUTO_TOOL &mdash; 즉시 실행</div>
+        <code>CODE_REVIEW_RESET</code><br>
+        <span style="color:#5a9a9a;">→ reset_review_count() &nbsp;당일 사용 횟수 0 초기화</span><br><br>
+        <code>LITERACY_PRACTICE_RESET</code><br>
+        <span style="color:#5a9a9a;">→ restore_practice_count() &nbsp;연습 횟수 복구 (기본 1회)</span>
+      </div>
+      <div style="background:#0a2228; border:1px solid #0d5a5a; border-radius:8px; padding:10px 13px; font-size:0.78rem; line-height:1.55; color:#aadddd;">
+        <div style="font-weight:700; color:#8ababa; margin-bottom:5px;">APPROVAL_TOOL &mdash; 추후 추가</div>
+        <span style="color:#5a7a7a;">관리자 승인이 필요한 고위험·비가역적 액션</span><br><br>
+        <div style="margin-top:8px; font-size:0.74rem; color:#1abfbf;">
+          author_id 없으면 → 로그인 정보 요청 메시지 반환
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <!-- STEP 3b: RAG 검색 -->
   <div class="box theme-rag">
-    <div class="box-label">Step 3 &nbsp;&middot;&nbsp; tool_rag / human_review 시에만</div>
+    <div class="box-label">Step 3-B &nbsp;&middot;&nbsp; tool_rag / human_review 시에만</div>
     <div class="box-title">Label-aware RAG 검색</div>
 
     <div class="rag-grid">
@@ -534,7 +579,7 @@
 
   <!-- STEP 4: 답변 생성 + 자체 평가 -->
   <div class="box theme-answer">
-    <div class="box-label">Step 4 &nbsp;&middot;&nbsp; Azure gpt-5.2 (endpoint 02)</div>
+    <div class="box-label">Step 4 &nbsp;&middot;&nbsp; Azure gpt-5.2 (endpoint 02) &nbsp;|&nbsp; RAG 경로만</div>
     <div class="box-title">답변 생성 + LLM 자체 평가</div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
@@ -566,7 +611,7 @@
     </div>
 
     <!-- 2차 분기 -->
-    <div style="font-size:0.75rem; color:#c0a060; font-weight:600; margin-bottom:8px;">Step 5 — 2차 strategy 분기 (답변 신뢰도 기반, 다운그레이드만)</div>
+    <div style="font-size:0.75rem; color:#c0a060; font-weight:600; margin-bottom:8px;">Step 5 — 2차 strategy 분기 (답변 신뢰도 기반, 다운그레이드만 &nbsp;|&nbsp; tool_action 경로 해당 없음)</div>
     <div class="output-grid">
       <div class="out-card s-red">
         <span class="badge badge-red" style="margin-bottom:8px; display:block;">no_response</span>
@@ -598,10 +643,11 @@
 
 <!-- 범례 -->
 <div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#0e8a8a;"></div> tool_action (에이전트 직접 실행)</div>
   <div class="legend-item"><div class="legend-dot" style="background:#c0392b;"></div> no_response (운영자 에스컬레이션)</div>
   <div class="legend-item"><div class="legend-dot" style="background:#c09010;"></div> human_review (초안 + 검토)</div>
   <div class="legend-item"><div class="legend-dot" style="background:#27ae60;"></div> tool_rag (자동 게시)</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#9b59b6;"></div> 복합 문의 (신규)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#9b59b6;"></div> 복합 문의</div>
   <div class="legend-item"><div class="legend-dot" style="background:#4f6aad;"></div> LLM (Azure gpt-5.2)</div>
   <div class="legend-item"><div class="legend-dot" style="background:#2d6a4f;"></div> RAG / FAISS</div>
 </div>
