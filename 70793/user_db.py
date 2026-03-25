@@ -49,23 +49,30 @@ CREATE TABLE IF NOT EXISTS enrollments (
     FOREIGN KEY (cohort_id) REFERENCES cohorts(id)
 );
 
+-- 운영 DB: code_review_log (user_id, lecture_id, started_at, status)
+-- PoC: 집계형으로 단순화. lecture_id 추가하여 강의별 한도 관리.
 CREATE TABLE IF NOT EXISTS code_review_logs (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id     INTEGER NOT NULL,
-    review_dt   TEXT NOT NULL,   -- 'YYYY-MM-DD' (날짜)
+    lecture_id  INTEGER,                -- 강의 ID (NULL이면 전체 리셋)
+    review_dt   TEXT NOT NULL,          -- 'YYYY-MM-DD' (날짜)
     used_count  INTEGER NOT NULL DEFAULT 0,
     reset_count INTEGER NOT NULL DEFAULT 0,   -- 당일 리셋 횟수
     last_reset_at TEXT,                        -- 마지막 리셋 시각 (ISO 8601)
-    UNIQUE (user_id, review_dt)
+    UNIQUE (user_id, lecture_id, review_dt)
 );
 
+-- 운영 DB: literacy_test_user_status (user_id, literacy_test_id, tutorial_attempts, tutorial_used)
+--       또는 user_tutorial_status (user_id, tutorial_attempts, tutorial_used)
+-- PoC: literacy_test_id 추가하여 시험별 관리 가능하도록 변경.
 CREATE TABLE IF NOT EXISTS practice_sessions (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id         INTEGER NOT NULL,
-    granted_count   INTEGER NOT NULL DEFAULT 0,   -- 누적 부여된 연습 횟수
-    used_count      INTEGER NOT NULL DEFAULT 0,   -- 누적 사용된 연습 횟수
-    last_restore_at TEXT,                          -- 마지막 복구 시각 (ISO 8601)
-    UNIQUE (user_id)
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id             INTEGER NOT NULL,
+    literacy_test_id    INTEGER,                -- 시험 ID (NULL이면 글로벌)
+    tutorial_attempts   INTEGER NOT NULL DEFAULT 0,   -- 부여된 연습 총 횟수 (= 운영 tutorial_attempts)
+    tutorial_used       INTEGER NOT NULL DEFAULT 0,   -- 사용한 연습 횟수 (= 운영 tutorial_used)
+    last_restore_at     TEXT,                          -- 마지막 복구 시각 (ISO 8601)
+    UNIQUE (user_id, literacy_test_id)
 );
 """
 
@@ -298,38 +305,161 @@ class UserContextDB:
             "retake_from":     retake_from,
         }
 
-    # ── 코드 리뷰 횟수 관리 ─────────────────────────────────────────
+    # ── 코드 리뷰 대상 조회: 최종과제 lecture_id ──────────────────────
+    #
+    # 코드 리뷰는 AI Bootcamp 최종과제 안에 있음 (UI: "오늘 10회 남음")
+    # → 사용자의 현재 진행 중인 Bootcamp 기수 → 최종과제 lecture_id 특정 필요
+    #
+    # 운영 DB 조회 흐름:
+    #   user_cohorts (user_id, cohort_id)
+    #     → cohort (id, program_id) WHERE program.type = 'bootcamp'
+    #     → program_final_project (program_id → lecture_ids)
+    #     → lecture (id) ← 최종과제 강의
+    #   또는 직접: code_review_log에서 해당 user_id의 최근 lecture_id 조회
 
-    def get_review_count_today(self, user_id: int, date_str: str = None) -> Dict:
+    def get_final_project_lecture_id(self, user_id: int) -> Optional[int]:
+        """
+        user_id의 현재 진행 중인 AI Bootcamp 최종과제 lecture_id를 반환.
+
+        운영 DB:
+          SELECT pfp.lecture_ids
+          FROM user_cohorts uc
+          JOIN cohort c ON uc.cohort_id = c.id
+          JOIN program_final_project pfp ON pfp.program_id = c.program_id
+          WHERE uc.user_id = :user_id
+          ORDER BY c.start_date DESC LIMIT 1
+
+        PoC: enrollments → AI Bootcamp 진행중 → cohort_id 기반 더미 lecture_id
+        """
+        conn = get_connection(self._db_path)
+        row = conn.execute(
+            """
+            SELECT c.id as cohort_id, c.cohort_name
+            FROM enrollments e
+            JOIN cohorts c ON e.cohort_id = c.id
+            WHERE e.user_id = ? AND e.status = 'in_progress'
+              AND c.program = 'AI Bootcamp'
+            ORDER BY c.start_dt DESC
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+        conn.close()
+
+        if not row:
+            return None
+        # PoC: cohort_id 기반 더미 lecture_id (실서비스에서는 program_final_project.lecture_ids)
+        return row["cohort_id"] * 100 + 1
+
+    # ── 사전연습 대상 조회: literacy_test_id ──────────────────────────
+    #
+    # 사전연습은 AI Literacy 인증시험 안에 있음 (UI: "인증시험 사전 연습 (97회 남음)")
+    # → 사용자의 현재 해당하는 literacy_test_id 특정 필요
+    #
+    # 운영 DB 조회 흐름:
+    #   literacy_test_user_status (user_id, literacy_test_id, tutorial_attempts, tutorial_used)
+    #   또는:
+    #     user_cohorts (user_id, cohort_id)
+    #       → literacy_test (cohort_id → id)
+    #       → literacy_test_user_status (user_id, literacy_test_id)
+
+    def get_active_literacy_test_id(self, user_id: int) -> Optional[int]:
+        """
+        user_id의 현재 활성화된 literacy_test_id를 반환.
+
+        운영 DB:
+          SELECT ltus.literacy_test_id
+          FROM literacy_test_user_status ltus
+          JOIN literacy_test lt ON ltus.literacy_test_id = lt.id
+          WHERE ltus.user_id = :user_id
+            AND lt.is_active = 1  -- 또는 test_end_time > NOW()
+          ORDER BY lt.test_start_time DESC LIMIT 1
+
+        PoC: AI Literacy 수강 중이면 더미 literacy_test_id 반환
+        """
+        conn = get_connection(self._db_path)
+        row = conn.execute(
+            """
+            SELECT c.id as cohort_id
+            FROM enrollments e
+            JOIN cohorts c ON e.cohort_id = c.id
+            WHERE e.user_id = ? AND e.status = 'in_progress'
+              AND c.program = 'AI Literacy'
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+        conn.close()
+
+        if not row:
+            return None
+        # PoC: cohort_id 기반 더미 test_id (실서비스에서는 literacy_test.id)
+        return row["cohort_id"] * 10 + 1
+
+    def get_user_identifier(self, user_id: int) -> Optional[str]:
+        """
+        user_id → user_identifier(사번/로그인 ID) 반환.
+
+        운영 DB: SELECT user_id FROM user WHERE id = ?
+        PoC: email에서 추출.
+        """
+        conn = get_connection(self._db_path)
+        row = conn.execute("SELECT email FROM users WHERE id=?", (user_id,)).fetchone()
+        conn.close()
+        if not row:
+            return None
+        return row["email"].split("@")[0] if row["email"] else f"user_{user_id}"
+
+    # ── 코드 리뷰 횟수 관리 ─────────────────────────────────────────
+    #
+    # 운영 DB 흐름:
+    #   1. inquiry.author_id → user.id 로 사용자 특정
+    #   2. user_lecture 또는 enrollments → 현재 수강 중인 lecture_id 목록
+    #   3. code_review_log에서 해당 user_id + lecture_id 당일 카운트 조회
+    #   4. 리셋: 해당 레코드 used_count = 0 또는 리셋 플래그 처리
+    #
+
+    def get_review_count_today(self, user_id: int, lecture_id: int = None, date_str: str = None) -> Dict:
         """
         user_id의 오늘 코드 리뷰 사용 현황 반환.
-        date_str: 'YYYY-MM-DD' (기본: 오늘)
 
-        반환 예:
-        {
-            "user_id": 1256,
-            "date": "2026-03-20",
-            "used_count": 3,
-            "remaining": 7,
-            "daily_limit": 10,
-            "reset_count": 0,
-        }
+        Parameters
+        ----------
+        user_id    : 사용자 PK (= inquiry.author_id)
+        lecture_id : 강의 ID (None이면 전체 합산)
+        date_str   : 'YYYY-MM-DD' (기본: 오늘)
+
+        운영 DB 쿼리:
+          SELECT COUNT(*) FROM code_review_log
+          WHERE user_id = :user_id
+            AND lecture_id = :lecture_id
+            AND DATE(started_at) = :date
+            AND status != 'FAILED'
         """
         import datetime
         if date_str is None:
             date_str = datetime.date.today().isoformat()
 
         conn = get_connection(self._db_path)
-        row = conn.execute(
-            "SELECT used_count, reset_count FROM code_review_logs WHERE user_id=? AND review_dt=?",
-            (user_id, date_str),
-        ).fetchone()
+        if lecture_id is not None:
+            row = conn.execute(
+                "SELECT used_count, reset_count FROM code_review_logs "
+                "WHERE user_id=? AND lecture_id=? AND review_dt=?",
+                (user_id, lecture_id, date_str),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT SUM(used_count) as used_count, SUM(reset_count) as reset_count "
+                "FROM code_review_logs WHERE user_id=? AND review_dt=?",
+                (user_id, date_str),
+            ).fetchone()
         conn.close()
 
-        used = row["used_count"] if row else 0
-        reset_cnt = row["reset_count"] if row else 0
+        used = row["used_count"] if row and row["used_count"] else 0
+        reset_cnt = row["reset_count"] if row and row["reset_count"] else 0
         return {
             "user_id":     user_id,
+            "lecture_id":  lecture_id,
             "date":        date_str,
             "used_count":  used,
             "remaining":   max(0, CODE_REVIEW_DAILY_LIMIT - used),
@@ -337,19 +467,19 @@ class UserContextDB:
             "reset_count": reset_cnt,
         }
 
-    def reset_review_count(self, user_id: int, date_str: str = None) -> Dict:
+    def reset_review_count(self, user_id: int, lecture_id: int = None, date_str: str = None) -> Dict:
         """
         user_id의 당일 코드 리뷰 사용 횟수를 0으로 초기화.
-        date_str: 'YYYY-MM-DD' (기본: 오늘)
 
-        반환 예:
-        {
-            "success": True,
-            "user_id": 1256,
-            "date": "2026-03-20",
-            "prev_used": 3,
-            "reset_count": 1,   -- 누적 리셋 횟수
-        }
+        Parameters
+        ----------
+        user_id    : 사용자 PK (= inquiry.author_id → user.id)
+        lecture_id : 강의 ID (None이면 해당 유저의 당일 전체 리셋)
+        date_str   : 'YYYY-MM-DD' (기본: 오늘)
+
+        운영 DB 동작:
+          1. user.id = inquiry.author_id 로 사용자 특정
+          2. code_review_log에서 해당 user_id + lecture_id + 당일 레코드 리셋
         """
         import datetime
         if date_str is None:
@@ -357,47 +487,85 @@ class UserContextDB:
         now_iso = datetime.datetime.now().isoformat(timespec="seconds")
 
         conn = get_connection(self._db_path)
-        row = conn.execute(
-            "SELECT used_count, reset_count FROM code_review_logs WHERE user_id=? AND review_dt=?",
-            (user_id, date_str),
-        ).fetchone()
 
-        prev_used = row["used_count"] if row else 0
-        new_reset_cnt = (row["reset_count"] if row else 0) + 1
+        if lecture_id is not None:
+            row = conn.execute(
+                "SELECT used_count, reset_count FROM code_review_logs "
+                "WHERE user_id=? AND lecture_id=? AND review_dt=?",
+                (user_id, lecture_id, date_str),
+            ).fetchone()
 
-        conn.execute(
-            """
-            INSERT INTO code_review_logs (user_id, review_dt, used_count, reset_count, last_reset_at)
-            VALUES (?, ?, 0, ?, ?)
-            ON CONFLICT(user_id, review_dt) DO UPDATE SET
-                used_count    = 0,
-                reset_count   = reset_count + 1,
-                last_reset_at = excluded.last_reset_at
-            """,
-            (user_id, date_str, new_reset_cnt, now_iso),
-        )
+            prev_used = row["used_count"] if row else 0
+            new_reset_cnt = (row["reset_count"] if row else 0) + 1
+
+            conn.execute(
+                """
+                INSERT INTO code_review_logs (user_id, lecture_id, review_dt, used_count, reset_count, last_reset_at)
+                VALUES (?, ?, ?, 0, ?, ?)
+                ON CONFLICT(user_id, lecture_id, review_dt) DO UPDATE SET
+                    used_count    = 0,
+                    reset_count   = reset_count + 1,
+                    last_reset_at = excluded.last_reset_at
+                """,
+                (user_id, lecture_id, date_str, new_reset_cnt, now_iso),
+            )
+        else:
+            # lecture_id 미지정 → 해당 유저의 당일 전체 리셋
+            row = conn.execute(
+                "SELECT SUM(used_count) as used_count FROM code_review_logs "
+                "WHERE user_id=? AND review_dt=?",
+                (user_id, date_str),
+            ).fetchone()
+            prev_used = row["used_count"] if row and row["used_count"] else 0
+
+            conn.execute(
+                "UPDATE code_review_logs SET used_count=0, reset_count=reset_count+1, "
+                "last_reset_at=? WHERE user_id=? AND review_dt=?",
+                (now_iso, user_id, date_str),
+            )
+            new_reset_cnt = -1  # 여러 행 업데이트됨
+
         conn.commit()
         conn.close()
 
         return {
             "success":     True,
             "user_id":     user_id,
+            "lecture_id":  lecture_id,
             "date":        date_str,
             "prev_used":   prev_used,
             "reset_count": new_reset_cnt,
         }
 
-    def restore_practice_count(self, user_id: int, count: int = PRACTICE_DEFAULT_RESTORE) -> Dict:
+    # ── AI Literacy 사전연습 횟수 관리 ──────────────────────────────
+    #
+    # 운영 DB 흐름:
+    #   1. inquiry.author_id → user.id 로 사용자 특정
+    #   2. literacy_test_user_status에서 해당 user_id + literacy_test_id 조회
+    #   3. tutorial_used 차감 또는 tutorial_attempts 증가
+    #
+
+    def restore_practice_count(self, user_id: int, count: int = PRACTICE_DEFAULT_RESTORE,
+                                literacy_test_id: int = None) -> Dict:
         """
         user_id의 AI Literacy 사전연습 횟수를 count만큼 복구(추가 부여).
 
-        반환 예:
-        {
-            "success": True,
-            "user_id": 1256,
-            "restored": 1,
-            "granted_total": 3,
-        }
+        Parameters
+        ----------
+        user_id          : 사용자 PK (= inquiry.author_id → user.id)
+        count            : 복구할 횟수
+        literacy_test_id : 시험 ID (None이면 글로벌)
+
+        운영 DB 쿼리:
+          -- 방법 1: tutorial_attempts 증가
+          UPDATE literacy_test_user_status
+          SET tutorial_attempts = tutorial_attempts + :count
+          WHERE user_id = :user_id AND literacy_test_id = :test_id
+
+          -- 방법 2: tutorial_used 차감
+          UPDATE literacy_test_user_status
+          SET tutorial_used = MAX(0, tutorial_used - :count)
+          WHERE user_id = :user_id AND literacy_test_id = :test_id
         """
         import datetime
         now_iso = datetime.datetime.now().isoformat(timespec="seconds")
@@ -405,25 +573,30 @@ class UserContextDB:
         conn = get_connection(self._db_path)
         conn.execute(
             """
-            INSERT INTO practice_sessions (user_id, granted_count, used_count, last_restore_at)
-            VALUES (?, ?, 0, ?)
-            ON CONFLICT(user_id) DO UPDATE SET
-                granted_count   = granted_count + ?,
-                last_restore_at = excluded.last_restore_at
+            INSERT INTO practice_sessions (user_id, literacy_test_id, tutorial_attempts, tutorial_used, last_restore_at)
+            VALUES (?, ?, ?, 0, ?)
+            ON CONFLICT(user_id, literacy_test_id) DO UPDATE SET
+                tutorial_attempts = tutorial_attempts + ?,
+                last_restore_at   = excluded.last_restore_at
             """,
-            (user_id, count, now_iso, count),
+            (user_id, literacy_test_id, count, now_iso, count),
         )
         conn.commit()
         row = conn.execute(
-            "SELECT granted_count FROM practice_sessions WHERE user_id=?", (user_id,)
+            "SELECT tutorial_attempts, tutorial_used FROM practice_sessions WHERE user_id=? AND literacy_test_id IS ?",
+            (user_id, literacy_test_id),
         ).fetchone()
         conn.close()
 
+        remaining = (row["tutorial_attempts"] - row["tutorial_used"]) if row else count
         return {
-            "success":       True,
-            "user_id":       user_id,
-            "restored":      count,
-            "granted_total": row["granted_count"] if row else count,
+            "success":            True,
+            "user_id":            user_id,
+            "literacy_test_id":   literacy_test_id,
+            "restored":           count,
+            "tutorial_attempts":  row["tutorial_attempts"] if row else count,
+            "tutorial_used":      row["tutorial_used"] if row else 0,
+            "remaining":          remaining,
         }
 
     def build_personal_context_str(self, author_id: int) -> str:

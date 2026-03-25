@@ -1,3 +1,9 @@
+# platform.uname() hangs on this Windows server — patch before any openai import
+import platform as _platform
+_platform.system = lambda: "Windows"
+_platform.platform = lambda: "Windows-11"
+_platform.machine = lambda: "AMD64"
+
 """
 AI Talent Lab 문의하기 Agent PoC
 
@@ -21,7 +27,7 @@ import random
 import hashlib
 import pickle
 import numpy as np
-import faiss
+faiss = None  # lazy import — build_index()에서 로드 (초기 기동 속도 개선)
 from html.parser import HTMLParser
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
@@ -207,6 +213,14 @@ class VectorStore:
 
     def build_index(self):
         """미캐시 텍스트를 배치 임베딩 후 FAISS IndexFlatIP 구축."""
+        import time as _time
+        global faiss
+        if faiss is None:
+            t0 = _time.time()
+            print("  faiss 로딩 중...", end="", flush=True)
+            import faiss as _faiss
+            faiss = _faiss
+            print(f" 완료 ({_time.time()-t0:.1f}s)")
         if not self._texts:
             return
 
@@ -215,9 +229,11 @@ class VectorStore:
                     if self._key(t) not in self._emb_cache]
 
         if to_embed:
-            print(f"  임베딩 API 호출: {len(to_embed)}건 (캐시 미적중)")
+            total = len(to_embed)
+            print(f"  임베딩 API 호출: {total}건 (캐시 미적중)")
             chunk = 100  # OpenAI 배치 최대
-            for i in range(0, len(to_embed), chunk):
+            done = 0
+            for i in range(0, total, chunk):
                 batch = to_embed[i:i + chunk]
                 resp = self._client.embeddings.create(
                     model=self.EMBED_MODEL,
@@ -225,6 +241,8 @@ class VectorStore:
                 )
                 for (key, _), emb in zip(batch, resp.data):
                     self._emb_cache[key] = emb.embedding
+                done += len(batch)
+                print(f"    임베딩 진행: {done}/{total}", flush=True)
             self._save_cache()
         else:
             print(f"  임베딩 캐시 100% 히트 ({len(self._texts)}건)")
@@ -968,12 +986,14 @@ class InquiryAgent:
         pre_label=True 이면 label_examples 키워드 패턴으로 라벨 사전 부여 (휴리스틱).
         로드 완료 후 자동으로 FAISS 벡터 인덱스를 구축함.
         """
+        # comment_data를 inquiry_id별로 미리 묶어서 O(n+m)으로 처리
+        comment_map: Dict[int, List[Dict]] = {}
+        for c in comment_data:
+            if c.get('author_id') in self.ADMIN_IDS:
+                comment_map.setdefault(c['inquiry_id'], []).append(c)
+
         for inquiry in inquiry_data:
-            admin_comments = [
-                c for c in comment_data
-                if c['inquiry_id'] == inquiry['id']
-                and c.get('author_id') in self.ADMIN_IDS
-            ]
+            admin_comments = comment_map.get(inquiry['id'], [])
             label = None
             if pre_label:
                 label = self._heuristic_label(inquiry)
@@ -1140,8 +1160,10 @@ def main():
     parser.add_argument("--random-state", type=int, default=42,  help="랜덤 시드 (기본 42)")
     args = parser.parse_args()
 
+    import time as _time
+
     print("=== AI Talent Lab 문의 Agent PoC ===\n")
-    print(f"random_state={args.random_state}  n_test={args.n_test}\n")
+    print(f"random_state={args.random_state}  n_test={args.n_test}\n", flush=True)
 
     _load_dotenv()
 
@@ -1149,13 +1171,17 @@ def main():
         print("[오류] AZURE_OPENAI_API_KEY 또는 AZURE_OPENAI_EMBED_API_KEY 환경변수가 없습니다.")
         return
 
+    t0 = _time.time()
     agent = InquiryAgent()
+    print(f"[타이머] Agent 초기화: {_time.time()-t0:.1f}s", flush=True)
 
     base_path = os.path.dirname(os.path.abspath(__file__))
 
+    t0 = _time.time()
     all_inquiries = load_json_file(os.path.join(base_path, 'inquiry_all.json'))
     all_comments  = load_json_file(os.path.join(base_path, 'inquiry_comment_all.json'))
-    print(f"통합 문의 데이터: {len(all_inquiries)}건 / 댓글: {len(all_comments)}건")
+    print(f"[타이머] JSON 로드: {_time.time()-t0:.1f}s", flush=True)
+    print(f"통합 문의 데이터: {len(all_inquiries)}건 / 댓글: {len(all_comments)}건", flush=True)
 
     # 관리자 답변이 있는 문의만 테스트 대상으로 추출 (비교 가능한 것만)
     admin_ids = agent.ADMIN_IDS
@@ -1173,11 +1199,13 @@ def main():
 
     # 테스트셋을 제외한 나머지를 RAG pool로 사용 (관리자 답변 있는 것만)
     rag_pool = [inq for inq in all_inquiries if inq['id'] not in test_ids and inq['id'] in comment_map]
-    print(f"테스트셋: {len(test_cases)}건 / RAG pool: {len(rag_pool)}건")
+    print(f"테스트셋: {len(test_cases)}건 / RAG pool: {len(rag_pool)}건", flush=True)
 
+    t0 = _time.time()
     agent.load_inquiry_history(rag_pool, all_comments, pre_label=False)
+    print(f"[타이머] RAG history 로드 + 벡터 인덱스: {_time.time()-t0:.1f}s", flush=True)
     print(f"RAG history 로드: {len(agent.inquiry_history)}건\n")
-    print("Agent 준비 완료\n")
+    print("Agent 준비 완료\n", flush=True)
 
     strategy_labels = {
         Strategy.NO_RESPONSE:  "운영자 에스컬레이션",
