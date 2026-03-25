@@ -216,7 +216,43 @@ def _insert_dummy_data(conn: sqlite3.Connection):
         # else: 수강 이력 없음
 
     conn.commit()
-    print(f"[user_db] 더미 데이터 삽입 완료: {len(KNOWN_AUTHOR_IDS)}명")
+
+    # ── 코드 리뷰 / 사전연습 사용 기록 (TOOL_ACTION 테스트용) ────────
+    import datetime
+    today = datetime.date.today().isoformat()
+
+    # 코드 리뷰 일일 한도(10회)를 다 쓴 사용자들
+    review_heavy_users = {
+        2343: 10,   # AI Bootcamp 12기 재수강, 한도 전부 소진
+        3010: 10,   # AI Bootcamp 12기, 한도 전부 소진
+        3405: 9,    # 거의 다 씀
+        3518: 10,   # 한도 전부 소진
+        1792: 8,    # 많이 씀
+    }
+    for uid, used in review_heavy_users.items():
+        conn.execute(
+            "INSERT OR IGNORE INTO code_review_logs "
+            "(user_id, review_dt, used_count, reset_count) VALUES (?,?,?,0)",
+            (uid, today, used),
+        )
+
+    # 사전연습 횟수를 사용/소진한 사용자들
+    practice_users_data = [
+        (752,  100, 98),   # AI Literacy 수강중, 거의 다 씀 (2회 남음)
+        (1133, 100, 100),  # 전부 소진 (0회 남음)
+        (3010, 100, 45),   # 일부 사용
+        (1306, 100, 99),   # 거의 다 씀 (1회 남음)
+    ]
+    for uid, granted, used in practice_users_data:
+        conn.execute(
+            "INSERT OR IGNORE INTO practice_sessions "
+            "(user_id, granted_count, used_count) VALUES (?,?,?)",
+            (uid, granted, used),
+        )
+
+    conn.commit()
+    print(f"[user_db] 더미 데이터 삽입 완료: {len(KNOWN_AUTHOR_IDS)}명 "
+          f"(코드리뷰 {len(review_heavy_users)}건, 사전연습 {len(practice_users_data)}건)")
 
 
 # ──────────────────────────────────────────────────────────────────
