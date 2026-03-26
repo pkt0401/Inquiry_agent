@@ -254,10 +254,8 @@
 <p class="subtitle">inquiry_agent.py 전체 처리 흐름 시각화</p>
 
 <div style="background:#1e2a1e; border:1px solid #3a5a3a; border-radius:8px; padding:12px 18px; margin-bottom:18px; font-size:0.78rem; color:#aaccaa; max-width:760px; margin-left:auto; margin-right:auto;">
-  <strong style="color:#6ab88a;">브랜치 구분</strong>&nbsp;&nbsp;
-  <code style="background:#0d1a0d; padding:2px 6px; border-radius:3px;">main</code> label-aware RAG, 개인화 없음 &nbsp;|&nbsp;
-  <code style="background:#0d1a0d; padding:2px 6px; border-radius:3px;">indiv</code> label-aware RAG + user_db 개인화 &nbsp;|&nbsp;
-  <code style="background:#0d1a0d; padding:2px 6px; border-radius:3px;">indiv_nolabel</code> similarity-only RAG + user_db 개인화
+  <strong style="color:#6ab88a;">현재 브랜치: <code style="background:#0d1a0d; padding:2px 6px; border-radius:3px;">indiv_nolabel</code></strong>&nbsp;&nbsp;
+  similarity-only RAG (label 무시, 순수 유사도) + user_db 개인화 + Group 3 Tool 직접 실행
 </div>
 
 <div class="pipeline">
@@ -274,9 +272,9 @@
 
   <div class="arrow"></div>
 
-  <!-- STEP 0: 개인화 DB (indiv/indiv_nolabel) -->
+  <!-- STEP 0: 개인화 DB (user_db.py) -->
   <div class="box" style="background:#1a2a1a; border:1px solid #3a6a3a; max-width:700px;">
-    <div class="box-label" style="color:#6ab88a;">Step 0 &nbsp;&middot;&nbsp; indiv / indiv_nolabel 브랜치만</div>
+    <div class="box-label" style="color:#6ab88a;">Step 0 &nbsp;&middot;&nbsp; user_db.py (SQLite)</div>
     <div class="box-title" style="color:#8ad88a;">개인화 컨텍스트 조회</div>
     <div class="box-body" style="color:#aaccaa;">
       <code>user_db.py</code> (SQLite) — 수강생 수강 이력·기수·수료 상태 조회<br>
@@ -303,7 +301,7 @@
       <div>
         <div style="font-size:0.75rem; color:#7a9adf; font-weight:600; margin-bottom:6px;">출력 &rarr;</div>
         <div class="output-tags">
-          <span class="tag">label (10개 중 1)</span>
+          <span class="tag">label (12개 중 1)</span>
           <span class="tag">confidence_level</span>
           <span class="tag new">is_compound ★</span>
           <span class="tag new">sub_labels ★</span>
@@ -514,16 +512,16 @@
   <!-- STEP 3b: RAG 검색 -->
   <div class="box theme-rag">
     <div class="box-label">Step 3-B &nbsp;&middot;&nbsp; tool_rag / human_review 시에만</div>
-    <div class="box-title">Label-aware RAG 검색</div>
+    <div class="box-title">Similarity-only RAG 검색</div>
 
     <div class="rag-grid">
       <div class="rag-item">
         <span class="rag-num">① FAISS 벡터 검색</span><br>
         Azure <code>text-embedding-3-large</code> (3072차원, endpoint 01)<br>
-        코사인 유사도, top_k&times;6 후보 &rarr; 상위 3개 선택<br>
+        코사인 유사도, 순수 유사도 상위 top_k 반환 (label 무시)<br>
         <span style="color:#6ab88a; font-size:0.73rem; margin-top:4px; display:block;">
-          <strong style="color:#4ade80;">indiv</strong>: 동일 label 우선 &rarr; label=None 보조 (label-aware)<br>
-          <strong style="color:#facc15;">indiv_nolabel</strong>: label 무시, 순수 유사도 top-3 (similarity-only)<br>
+          <strong style="color:#facc15;">similarity-only 모드</strong>: label 필터링 없이 순수 코사인 유사도 top-5 반환<br>
+          history 문서는 <code>pre_label=False</code>로 라벨 미부여<br>
           max_score &rarr; Step 2 다운그레이드 판단에 사용
         </span>
       </div>
@@ -569,7 +567,7 @@
         <div class="idx-card">
           <span class="idx-num">~205건</span>
           History (운영자 답변↔)<br>
-          <span style="color:#6ab88a;">inquiry_all.json 110건 기반</span>
+          <span style="color:#6ab88a;">inquiry_all.json 110건 기반<br>pre_label=False (라벨 미부여)</span>
         </div>
       </div>
     </div>
@@ -589,7 +587,7 @@
           &middot; 문의 (제목 + 내용)<br>
           &middot; <strong>[참고 정보]</strong>: FAISS 검색 결과 top-3<br>
           &middot; prior_knowledge + schedule.json<br>
-          &middot; 개인 컨텍스트 (indiv 브랜치)
+          &middot; 개인 컨텍스트 (user_db.py)
         </div>
       </div>
       <div>

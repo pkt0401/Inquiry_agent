@@ -1,12 +1,13 @@
 # AI Talent Lab 문의하기 Agent PoC 보고서
 
-> **브랜치 구분**
+> **현재 브랜치: `indiv_nolabel`**
 >
-> | 브랜치 | RAG 방식 | 개인화 DB | 비고 |
-> |--------|----------|----------|------|
-> | `main` | label-aware | 없음 | 기본 파이프라인 |
-> | `indiv` | label-aware | user_db.py (수강생 SQLite) | 개인화 답변 추가 |
-> | `indiv_nolabel` | similarity-only (label 무시) | user_db.py (수강생 SQLite) | label 없이 동작 |
+> | 항목 | 내용 |
+> |------|------|
+> | RAG 방식 | similarity-only (label 무시, 순수 코사인 유사도) |
+> | 개인화 DB | user_db.py (수강생 SQLite) |
+> | Tool 실행 | tools.py (Group 3: CODE_REVIEW_RESET, LITERACY_PRACTICE_RESET) |
+> | History 라벨 | pre_label=False (휴리스틱 라벨 미부여) |
 
 ---
 
@@ -46,9 +47,9 @@
 문의 입력 (title + content, HTML → 텍스트 변환)
     │
     ▼
-[Step 0] 개인화 컨텍스트 조회  ← indiv/indiv_nolabel 브랜치만
+[Step 0] 개인화 컨텍스트 조회
     │  user_db.py (SQLite): 수강생 수강 이력·기수·수료 상태 조회
-    │  → LLM 프롬프트에 개인 컨텍스트로 주입
+    │  → LLM 분류·답변 프롬프트에 개인 컨텍스트로 주입
     │
     ▼
 [Step 1] LLM 분류  (Azure gpt-5.2)
@@ -56,7 +57,7 @@
     │  ↑ 라벨별 설명 + 실제 예시 제목 주입 — knowledge_base.json
     │  ↑ 기수 일정·인증시험 일정 주입 — schedule.json (동적, 기수마다 갱신)
     │
-    │  label       → 10개 카테고리 중 하나 (복합 시 우선순위 높은 라벨)
+    │  label       → 12개 카테고리 중 하나 (복합 시 우선순위 높은 라벨)
     │  confidence  → high / low  (①문의 명확성 ②카테고리 단일성만으로 판단)
     │  is_compound → 성격이 다른 질문이 2개 이상 포함 여부
     │  sub_labels  → 감지된 모든 라벨 목록
@@ -83,15 +84,12 @@
                 ├─ max_score < 0.65  → human_review 1차 다운그레이드
                 └─ max_score ≥ 0.65  → tool_rag (잠정)
 
-[Step 3] RAG 검색  (_build_kb_context)
-    FAISS 유사도 검색 (top_k×6 후보, Azure text-embedding-3-large 3072차원)
+[Step 3] RAG 검색  (_build_kb_context, similarity_only=True)
+    FAISS 유사도 검색 (Azure text-embedding-3-large 3072차원)
 
-    [indiv 브랜치 — label-aware]
-    ① 동일 label 문서 우선 (kb_curated → history 순)
-    ② 동일 label 부족 시 label=None history로 보충
-
-    [indiv_nolabel 브랜치 — similarity-only]
-    ① label 무시, 순수 코사인 유사도 상위 top_k 반환
+    [similarity-only 모드]
+    ① label 무시, 순수 코사인 유사도 상위 top_k(=5) 반환
+    ② history 문서는 pre_label=False (휴리스틱 라벨 미부여)
 
     ③ CODE_LOGIC_ERROR 또는 에러 키워드 → error_solutions regex 보완
     ④ COURSE_INFO 라벨 → prior_knowledge.programs 과정 정보 추가
@@ -111,7 +109,7 @@
 
 ---
 
-## 3. 카테고리 Labels — 12개
+## 3. 카테고리 Labels — 12개 (Group 1: 5, Group 2: 5, Group 3: 2)
 
 ### Group 1 — `no_response` (운영자 에스컬레이션)
 
@@ -152,7 +150,7 @@
 | 번호 | 요소 | 판단 질문 |
 |------|------|----------|
 | ① | 문의 명확성 | 무엇을 묻는지 텍스트만 봐도 알 수 있는가? |
-| ② | 카테고리 단일성 | 10개 중 딱 하나에만 해당하는가? (복합 문의로 sub_label 명확히 식별 가능한 경우는 ② 충족 간주) |
+| ② | 카테고리 단일성 | 12개 중 딱 하나에만 해당하는가? (복합 문의로 sub_label 명확히 식별 가능한 경우는 ② 충족 간주) |
 
 | 레벨 | 충족 조건 | 처리 방식 |
 |------|----------|----------|
@@ -187,7 +185,7 @@
 
 | 단계 | 항목 | 내용 |
 |------|------|------|
-| Step 1 | `label` | 10개 카테고리 중 하나 (복합 시 우선순위 높은 라벨) |
+| Step 1 | `label` | 12개 카테고리 중 하나 (복합 시 우선순위 높은 라벨) |
 | Step 1 | `confidence_level` | high / low (①문의 명확성 ②카테고리 단일성) |
 | Step 1 | `is_compound` | 성격이 다른 질문이 2개 이상 포함 여부 |
 | Step 1 | `sub_labels` | 감지된 모든 라벨 목록 |
@@ -209,9 +207,9 @@ confidence == 'high'                                       → tool_rag       # 
 # → AUTO_TOOL  : 즉시 DB 조작 + 답변 생성 (CODE_REVIEW_RESET, LITERACY_PRACTICE_RESET)
 # → APPROVAL_TOOL: 승인 대기 (추후 추가)
 
-# Step 3 (RAG 경로): RAG 검색 (복합 Group2 2-3개는 sub_label별 각각 검색 후 합산)
-# 단일 문의:    kb_context, score = _build_kb_context(label, text)
-# 복합 G2 문의: ctx_list = [_build_kb_context(lbl, text) for lbl in sub_labels]
+# Step 3 (RAG 경로): RAG 검색 — similarity_only=True (label 무시, 순수 유사도)
+# 단일 문의:    kb_context, score = _build_kb_context(label, text, similarity_only=True)
+# 복합 G2 문의: ctx_list = [_build_kb_context(lbl, text, similarity_only=True) for lbl in sub_labels]
 #               kb_context = join(ctx_list),  score = min(scores)
 
 # RAG 유사도 기반 1차 다운그레이드 (tool_rag만 해당)
@@ -262,7 +260,7 @@ is_draft = (strategy == 'human_review')
 
 ---
 
-## 7. Label-aware RAG 설계
+## 7. Similarity-only RAG 설계
 
 ### 벡터 검색 스택
 
@@ -271,51 +269,32 @@ is_draft = (strategy == 'human_review')
 | 임베딩 모델 | Azure `text-embedding-3-large` (3072차원, endpoint 01) |
 | 인덱스 | FAISS `IndexFlatIP` (코사인 유사도, L2 정규화 후 inner product) |
 | 캐시 | `embeddings_cache.pkl` — 재실행 시 API 미호출 |
-| 검색 방식 | **label-aware** (기본): 동일 label 우선, label=None 보조<br>**similarity-only** (비교용): label 무시, 순수 유사도 상위 반환 |
+| 검색 방식 | **similarity-only**: label 무시, 순수 코사인 유사도 상위 top_k 반환 |
 | 다운그레이드 임계값 | `RAG_CONFIDENCE_THRESHOLD = 0.65` — 미만이면 tool_rag → human_review |
 
-### RAG 검색 흐름 (label-aware 기본 모드)
+### RAG 검색 흐름 (similarity-only 모드)
 
 ```
-FAISS 검색 (top_k × 6 = 18개 후보, 유사도 순)
+FAISS 검색 (순수 코사인 유사도 순)
     │
-    ├─ 동일 label 문서 → matched (우선)
-    ├─ label=None 문서 → others  (보조, matched 부족 시만)
-    └─ 다른 label 문서 → 버림
+    └─ label 무관하게 유사도 상위 top_k(=5)개 반환
     │
-    ▼ 최대 top_k=3개 선택, max_score 추출
+    ▼ max_score 추출
 
 + 에러 솔루션 regex 보완  (CODE_LOGIC_ERROR 또는 에러 키워드 감지 시)
 + 과정 정보 보완           (COURSE_INFO 라벨 시)
 ```
 
-### label=None history란?
-
-history 문의에 휴리스틱 라벨(9개 regex)을 부여하는데, 어떤 패턴도 매칭되지 않으면 `label=None`.
-검색 시 동일 label 문서가 top_k에 못 미칠 때만 보조로 사용됨 (노이즈 최소화).
-
-### 검색 모드 비교
-
-두 모드는 브랜치 단위로 구분되며, `indiv_nolabel` 브랜치가 similarity-only를 기본값으로 사용:
-
-| 모드 | 설명 | 해당 브랜치 |
-|------|------|------------|
-| Mode A (label-aware) | 동일 label 우선 필터 | `main`, `indiv` |
-| Mode B (similarity-only) | label 무시, 순수 유사도 | `indiv_nolabel` |
-
 ### FAISS 인덱스 구성 문서
 
 | 출처 | 문서 수 | label 여부 |
 |------|--------:|-----------|
-| KB 큐레이션 Q&A (knowledge_base.json) | ~30건 | 항상 있음 |
-| 에러 솔루션 (knowledge_base.json) | 5건 | CODE_LOGIC_ERROR 고정 |
-| history (inquiry_all.json 기반, 운영자 답변 있는 것) | ~205건 | 휴리스틱 라벨 + None |
-| **합계** | **~240건** | |
+| KB 큐레이션 Q&A (knowledge_base.json) | ~20건 | 항상 있음 (검색 시 미사용) |
+| 에러 솔루션 (knowledge_base.json) | 5건 | CODE_LOGIC_ERROR 고정 (검색 시 미사용) |
+| history (inquiry_all.json 기반, 운영자 답변 있는 것) | ~205건 | pre_label=False (라벨 미부여, label=None) |
+| **합계** | **~230건** | |
 
-### Heuristic Pre-labeling (history용)
-
-inquiry_all.json 110건에 대해, LLM 호출 없이 정규식 패턴으로 사전 라벨 부여.
-FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
+> `pre_label=False`: history 로드 시 휴리스틱 라벨을 부여하지 않음. similarity-only 모드에서는 label을 검색 필터로 사용하지 않으므로 라벨 없이 순수 유사도로 검색.
 
 ---
 
@@ -330,7 +309,7 @@ FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
 | FAISS 벡터 검색 | KB 큐레이션 Q&A + 에러 솔루션 + history (~240건) — Azure text-embedding-3-large (3072차원)<br>※ inquiry_all.json과 겹치는 qa_examples 제거 (leakage 방지) | 해당 Group 2 label |
 | 에러 솔루션 정규식 | API 키, 패키지, 코드 에러 해결법 | `CODE_LOGIC_ERROR` 보완 |
 
-### Tier 2 — 개인화 DB (indiv/indiv_nolabel 브랜치 구현)
+### Tier 2 — 개인화 DB (user_db.py 구현)
 
 | Context | 내용 | 구현 방식 |
 |---------|------|----------|
@@ -366,18 +345,18 @@ FAISS 검색 시 동일 label 문서 우선 필터링에 사용.
 
 ## 10. 구현 파일 목록
 
-| 파일 | 브랜치 | 설명 |
-|------|--------|------|
-| `inquiry_agent.py` | 전체 | 메인 Agent (분류·RAG·답변 생성·strategy 결정) |
-| `user_db.py` | indiv, indiv_nolabel | 수강생 개인화 DB (SQLite) + Tool용 코드리뷰·연습횟수 관리 |
-| `tools.py` | indiv, indiv_nolabel | Group 3 Tool 정의 및 실행기 (AUTO_TOOL / APPROVAL_TOOL) |
-| `knowledge_base.json` | 전체 | 사전 지식 + 큐레이션 Q&A + 에러 솔루션 (static) |
-| `schedule.json` | 전체 | 기수별 수강 일정 + 인증시험 일정 (dynamic, 기수마다 갱신) |
-| `inquiry_all.json` | 전체 | 전체 문의 게시물 (110건, 기존+3월 신규 병합) — train+test 통합 소스 |
-| `inquiry_comment_all.json` | 전체 | 전체 문의 댓글 (125건) |
-| `pipeline_viz.html` | 전체 | 전체 파이프라인 시각화 (브라우저에서 열기) |
-| `embeddings_cache.pkl` | 전체 | 임베딩 캐시 (재실행 시 API 미호출) |
-| `requirements.txt` | 전체 | `openai>=1.0.0`, `faiss-cpu==1.7.4`, `numpy>=1.24.0,<2` |
+| 파일 | 설명 |
+|------|------|
+| `inquiry_agent.py` | 메인 Agent (분류·RAG·답변 생성·strategy 결정, similarity_only=True) |
+| `user_db.py` | 수강생 개인화 DB (SQLite) + Tool용 코드리뷰·연습횟수 관리 |
+| `tools.py` | Group 3 Tool 정의 및 실행기 (AUTO_TOOL / APPROVAL_TOOL) |
+| `knowledge_base.json` | 사전 지식 + 큐레이션 Q&A + 에러 솔루션 (static) |
+| `schedule.json` | 기수별 수강 일정 + 인증시험 일정 (dynamic, 기수마다 갱신) |
+| `inquiry_all.json` | 전체 문의 게시물 (110건, 기존+3월 신규 병합) — train+test 통합 소스 |
+| `inquiry_comment_all.json` | 전체 문의 댓글 (125건) |
+| `pipeline_viz.html` | 전체 파이프라인 시각화 (브라우저에서 열기) |
+| `embeddings_cache.pkl` | 임베딩 캐시 (재실행 시 API 미호출) |
+| `requirements.txt` | `openai>=1.0.0`, `faiss-cpu==1.7.4`, `numpy>=1.24.0,<2` |
 
 ---
 
