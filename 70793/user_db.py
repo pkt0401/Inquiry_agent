@@ -494,30 +494,39 @@ class UserContextDB:
                 "WHERE user_id=? AND lecture_id=? AND review_dt=?",
                 (user_id, lecture_id, date_str),
             ).fetchone()
-
-            prev_used = row["used_count"] if row else 0
-            new_reset_cnt = (row["reset_count"] if row else 0) + 1
-
-            conn.execute(
-                """
-                INSERT INTO code_review_logs (user_id, lecture_id, review_dt, used_count, reset_count, last_reset_at)
-                VALUES (?, ?, ?, 0, ?, ?)
-                ON CONFLICT(user_id, lecture_id, review_dt) DO UPDATE SET
-                    used_count    = 0,
-                    reset_count   = reset_count + 1,
-                    last_reset_at = excluded.last_reset_at
-                """,
-                (user_id, lecture_id, date_str, new_reset_cnt, now_iso),
-            )
         else:
-            # lecture_id 미지정 → 해당 유저의 당일 전체 리셋
             row = conn.execute(
-                "SELECT SUM(used_count) as used_count FROM code_review_logs "
-                "WHERE user_id=? AND review_dt=?",
+                "SELECT SUM(used_count) as used_count, SUM(reset_count) as reset_count "
+                "FROM code_review_logs WHERE user_id=? AND review_dt=?",
                 (user_id, date_str),
             ).fetchone()
-            prev_used = row["used_count"] if row and row["used_count"] else 0
 
+        # 레코드 없음 = 오늘 한 번도 안 씀 = 10회 전부 남음 → 리셋 불필요
+        prev_used = row["used_count"] if row and row["used_count"] else 0
+        if prev_used == 0:
+            conn.close()
+            return {
+                "success":     False,
+                "user_id":     user_id,
+                "lecture_id":  lecture_id,
+                "date":        date_str,
+                "prev_used":   0,
+                "reset_count": 0,
+                "remaining":   CODE_REVIEW_DAILY_LIMIT,
+                "reason":      f"오늘 사용 이력이 없습니다 (잔여 {CODE_REVIEW_DAILY_LIMIT}회)",
+            }
+
+        if lecture_id is not None:
+            conn.execute(
+                """
+                UPDATE code_review_logs
+                SET used_count = 0, reset_count = reset_count + 1, last_reset_at = ?
+                WHERE user_id = ? AND lecture_id = ? AND review_dt = ?
+                """,
+                (now_iso, user_id, lecture_id, date_str),
+            )
+            new_reset_cnt = (row["reset_count"] if row else 0) + 1
+        else:
             conn.execute(
                 "UPDATE code_review_logs SET used_count=0, reset_count=reset_count+1, "
                 "last_reset_at=? WHERE user_id=? AND review_dt=?",
@@ -549,52 +558,95 @@ class UserContextDB:
                                 literacy_test_id: int = None) -> Dict:
         """
         user_id의 AI Literacy 사전연습 횟수를 count만큼 복구(추가 부여).
+        총 횟수(tutorial_attempts)는 PRACTICE_INITIAL_COUNT(100)를 초과할 수 없음.
 
         Parameters
         ----------
         user_id          : 사용자 PK (= inquiry.author_id → user.id)
         count            : 복구할 횟수
-        literacy_test_id : 시험 ID (None이면 글로벌)
-
-        운영 DB 쿼리:
-          -- 방법 1: tutorial_attempts 증가
-          UPDATE literacy_test_user_status
-          SET tutorial_attempts = tutorial_attempts + :count
-          WHERE user_id = :user_id AND literacy_test_id = :test_id
-
-          -- 방법 2: tutorial_used 차감
-          UPDATE literacy_test_user_status
-          SET tutorial_used = MAX(0, tutorial_used - :count)
-          WHERE user_id = :user_id AND literacy_test_id = :test_id
+        literacy_test_id : 시험 ID (None이면 실패 — AI Literacy 미등록)
         """
+        # literacy_test_id가 None이면 AI Literacy에 등록되지 않은 사용자
+        if literacy_test_id is None:
+            return {
+                "success":            False,
+                "user_id":            user_id,
+                "literacy_test_id":   None,
+                "restored":           0,
+                "reason":             "AI Literacy 수강 이력 없음 (literacy_test_id 조회 실패)",
+            }
+
         import datetime
         now_iso = datetime.datetime.now().isoformat(timespec="seconds")
 
         conn = get_connection(self._db_path)
+
+        # 현재 상태 조회
+        row = conn.execute(
+            "SELECT tutorial_attempts, tutorial_used FROM practice_sessions "
+            "WHERE user_id=? AND literacy_test_id=?",
+            (user_id, literacy_test_id),
+        ).fetchone()
+
+        # 레코드 없음 = 한 번도 사용 안 함 = 100회 전부 남아있음 → 복구 불필요
+        if row is None:
+            conn.close()
+            return {
+                "success":            False,
+                "user_id":            user_id,
+                "literacy_test_id":   literacy_test_id,
+                "restored":           0,
+                "tutorial_attempts":  PRACTICE_INITIAL_COUNT,
+                "tutorial_used":      0,
+                "remaining":          PRACTICE_INITIAL_COUNT,
+                "reason":             f"사전연습 사용 이력이 없습니다 (잔여 {PRACTICE_INITIAL_COUNT}회)",
+            }
+
+        current_attempts = row["tutorial_attempts"]
+        current_used     = row["tutorial_used"]
+
+        # 상한 체크: 복구 후 attempts가 PRACTICE_INITIAL_COUNT(100)을 초과하지 않도록
+        max_restore = max(0, PRACTICE_INITIAL_COUNT - current_attempts)
+        actual_count = min(count, max_restore)
+
+        if actual_count <= 0:
+            conn.close()
+            return {
+                "success":            False,
+                "user_id":            user_id,
+                "literacy_test_id":   literacy_test_id,
+                "restored":           0,
+                "tutorial_attempts":  current_attempts,
+                "tutorial_used":      current_used,
+                "remaining":          current_attempts - current_used,
+                "reason":             f"이미 최대 횟수({PRACTICE_INITIAL_COUNT}회)에 도달하여 추가 복구 불가",
+            }
+
         conn.execute(
             """
-            INSERT INTO practice_sessions (user_id, literacy_test_id, tutorial_attempts, tutorial_used, last_restore_at)
-            VALUES (?, ?, ?, 0, ?)
-            ON CONFLICT(user_id, literacy_test_id) DO UPDATE SET
-                tutorial_attempts = tutorial_attempts + ?,
-                last_restore_at   = excluded.last_restore_at
+            UPDATE practice_sessions
+            SET tutorial_attempts = tutorial_attempts + ?,
+                last_restore_at   = ?
+            WHERE user_id = ? AND literacy_test_id = ?
             """,
-            (user_id, literacy_test_id, count, now_iso, count),
+            (actual_count, now_iso, user_id, literacy_test_id),
         )
         conn.commit()
         row = conn.execute(
-            "SELECT tutorial_attempts, tutorial_used FROM practice_sessions WHERE user_id=? AND literacy_test_id IS ?",
+            "SELECT tutorial_attempts, tutorial_used FROM practice_sessions "
+            "WHERE user_id=? AND literacy_test_id=?",
             (user_id, literacy_test_id),
         ).fetchone()
         conn.close()
 
-        remaining = (row["tutorial_attempts"] - row["tutorial_used"]) if row else count
+        remaining = (row["tutorial_attempts"] - row["tutorial_used"]) if row else actual_count
         return {
             "success":            True,
             "user_id":            user_id,
             "literacy_test_id":   literacy_test_id,
-            "restored":           count,
-            "tutorial_attempts":  row["tutorial_attempts"] if row else count,
+            "restored":           actual_count,
+            "requested":          count,
+            "tutorial_attempts":  row["tutorial_attempts"] if row else actual_count,
             "tutorial_used":      row["tutorial_used"] if row else 0,
             "remaining":          remaining,
         }

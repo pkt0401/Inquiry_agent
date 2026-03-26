@@ -47,6 +47,11 @@ from typing import Dict, List, Optional, Tuple
 from user_db import UserContextDB, CODE_REVIEW_DAILY_LIMIT, PRACTICE_DEFAULT_RESTORE
 
 logger = logging.getLogger(__name__)
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("[%(levelname)s] %(name)s: %(message)s"))
+    logger.addHandler(_handler)
+    logger.setLevel(logging.INFO)
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -137,6 +142,19 @@ def _do_code_review_reset(user_db: UserContextDB, user_id: int) -> Dict:
     result["user_identifier"] = user_identifier
     result["final_lecture_id"] = final_lecture_id
 
+    if not result.get("success"):
+        reason = result.get("reason", "알 수 없는 오류")
+        logger.warning(
+            "[tool] code_review_reset FAILED: user_id=%s (%s), final_lecture_id=%s, reason=%s",
+            user_id, user_identifier, final_lecture_id, reason,
+        )
+        answer = (
+            f"안녕하세요, AI Talent Lab입니다.\n"
+            f"코드 리뷰 횟수가 아직 남아있어 초기화가 필요하지 않습니다. "
+            f"현재 {result.get('remaining', CODE_REVIEW_DAILY_LIMIT)}회 사용 가능합니다.\n\n감사합니다."
+        )
+        return {"answer": answer, "result": result, "success": False}
+
     logger.info(
         "[tool] code_review_reset: user_id=%s (%s), final_lecture_id=%s, prev_used=%s",
         user_id, user_identifier, final_lecture_id, result.get("prev_used", 0),
@@ -147,7 +165,7 @@ def _do_code_review_reset(user_db: UserContextDB, user_id: int) -> Dict:
         f"코드 리뷰 횟수를 초기화했습니다. "
         f"오늘 다시 {CODE_REVIEW_DAILY_LIMIT}회 요청하실 수 있습니다.\n\n감사합니다."
     )
-    return {"answer": answer, "result": result, "success": result.get("success", False)}
+    return {"answer": answer, "result": result, "success": True}
 
 
 def _do_practice_reset(user_db: UserContextDB, user_id: int, count: int) -> Dict:
@@ -178,17 +196,33 @@ def _do_practice_reset(user_db: UserContextDB, user_id: int, count: int) -> Dict
     result = user_db.restore_practice_count(user_id, count, literacy_test_id=literacy_test_id)
     result["user_identifier"] = user_identifier
 
+    if not result.get("success"):
+        reason = result.get("reason", "알 수 없는 오류")
+        logger.warning(
+            "[tool] practice_reset FAILED: user_id=%s (%s), literacy_test_id=%s, reason=%s",
+            user_id, user_identifier, literacy_test_id, reason,
+        )
+        answer = (
+            f"안녕하세요, AI Talent Lab입니다.\n"
+            f"사전연습 횟수 복구를 처리할 수 없습니다. "
+            f"담당자에게 문의해 주세요.\n\n감사합니다."
+        )
+        return {"answer": answer, "result": result, "success": False}
+
+    actual_restored = result.get("restored", count)
     logger.info(
-        "[tool] practice_reset: user_id=%s (%s), literacy_test_id=%s, restored=%d, remaining=%s",
-        user_id, user_identifier, literacy_test_id, count, result.get("remaining", "?"),
+        "[tool] practice_reset: user_id=%s (%s), literacy_test_id=%s, "
+        "requested=%d, restored=%d, remaining=%s",
+        user_id, user_identifier, literacy_test_id,
+        count, actual_restored, result.get("remaining", "?"),
     )
 
     answer = (
         f"안녕하세요, AI Talent Lab입니다.\n"
-        f"AI Literacy 사전연습 횟수 {count}회를 복구했습니다. "
+        f"AI Literacy 사전연습 횟수 {actual_restored}회를 복구했습니다. "
         f"다시 연습하실 수 있습니다.\n\n감사합니다."
     )
-    return {"answer": answer, "result": result, "success": result.get("success", False)}
+    return {"answer": answer, "result": result, "success": True}
 
 
 # ──────────────────────────────────────────────────────────────────
