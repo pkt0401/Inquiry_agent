@@ -191,6 +191,7 @@ def _do_practice_reset(user_db: UserContextDB, user_id: int, count: int) -> Dict
 
     # 사용자의 활성 인증시험 ID 조회
     # 운영: literacy_test_user_status → literacy_test.id
+    # 조회 실패 시 literacy_test_id=None(글로벌)로 fallback하여 복구 진행
     literacy_test_id = user_db.get_active_literacy_test_id(user_id)
 
     result = user_db.restore_practice_count(user_id, count, literacy_test_id=literacy_test_id)

@@ -236,18 +236,28 @@ def _insert_dummy_data(conn: sqlite3.Connection):
             (uid, today, used),
         )
 
-    # 사전연습 횟수를 사용/소진한 사용자들
+    # 사전연습 횟수를 사용/소진한 사용자들 (tutorial_attempts=부여, tutorial_used=사용)
     practice_users_data = [
         (752,  100, 98),   # AI Literacy 수강중, 거의 다 씀 (2회 남음)
         (1133, 100, 100),  # 전부 소진 (0회 남음)
         (3010, 100, 45),   # 일부 사용
         (1306, 100, 99),   # 거의 다 씀 (1회 남음)
     ]
-    for uid, granted, used in practice_users_data:
+    for uid, attempts, used in practice_users_data:
+        # literacy_test_id는 get_active_literacy_test_id()에서 반환하는 값과 매칭
+        lit_test_id = None
+        lit_row = conn.execute(
+            "SELECT c.id as cohort_id FROM enrollments e "
+            "JOIN cohorts c ON e.cohort_id = c.id "
+            "WHERE e.user_id = ? AND c.program = 'AI Literacy' LIMIT 1",
+            (uid,),
+        ).fetchone()
+        if lit_row:
+            lit_test_id = lit_row["cohort_id"] * 10 + 1
         conn.execute(
             "INSERT OR IGNORE INTO practice_sessions "
-            "(user_id, granted_count, used_count) VALUES (?,?,?)",
-            (uid, granted, used),
+            "(user_id, literacy_test_id, tutorial_attempts, tutorial_used) VALUES (?,?,?,?)",
+            (uid, lit_test_id, attempts, used),
         )
 
     conn.commit()
@@ -593,85 +603,90 @@ class UserContextDB:
     def restore_practice_count(self, user_id: int, count: int = PRACTICE_DEFAULT_RESTORE,
                                 literacy_test_id: int = None) -> Dict:
         """
-        user_id의 AI Literacy 사전연습 횟수를 count만큼 복구(추가 부여).
-        총 횟수(tutorial_attempts)는 PRACTICE_INITIAL_COUNT(100)를 초과할 수 없음.
+        user_id의 AI Literacy 사전연습 횟수를 count만큼 복구.
+        실제 운영: 잘못 차감된 tutorial_used를 줄여주는 방식.
+        (운영자가 DB에서 그날 시도 기록을 전날로 옮기는 것과 동일 효과)
 
         Parameters
         ----------
         user_id          : 사용자 PK (= inquiry.author_id → user.id)
         count            : 복구할 횟수
-        literacy_test_id : 시험 ID (None이면 실패 — AI Literacy 미등록)
+        literacy_test_id : 시험 ID (None이면 글로벌 레코드로 처리)
         """
-        # literacy_test_id가 None이면 AI Literacy에 등록되지 않은 사용자
-        if literacy_test_id is None:
-            return {
-                "success":            False,
-                "user_id":            user_id,
-                "literacy_test_id":   None,
-                "restored":           0,
-                "reason":             "AI Literacy 수강 이력 없음 (literacy_test_id 조회 실패)",
-            }
-
         import datetime
         now_iso = datetime.datetime.now().isoformat(timespec="seconds")
 
         conn = get_connection(self._db_path)
 
+        # literacy_test_id가 None이면 IS NULL 조건 사용 (SQL에서 NULL=NULL은 False)
+        if literacy_test_id is not None:
+            _where = "user_id=? AND literacy_test_id=?"
+            _params = (user_id, literacy_test_id)
+        else:
+            _where = "user_id=? AND literacy_test_id IS NULL"
+            _params = (user_id,)
+
         # 현재 상태 조회
         row = conn.execute(
-            "SELECT tutorial_attempts, tutorial_used FROM practice_sessions "
-            "WHERE user_id=? AND literacy_test_id=?",
-            (user_id, literacy_test_id),
+            f"SELECT tutorial_attempts, tutorial_used FROM practice_sessions WHERE {_where}",
+            _params,
         ).fetchone()
 
-        # 레코드 없음 = 한 번도 사용 안 함 = 100회 전부 남아있음 → 복구 불필요
+        # 레코드 없음 → 새 레코드 생성 (수강 이력 없어도 복구 처리)
         if row is None:
+            conn.execute(
+                "INSERT INTO practice_sessions "
+                "(user_id, literacy_test_id, tutorial_attempts, tutorial_used, last_restore_at) "
+                "VALUES (?, ?, ?, 0, ?)",
+                (user_id, literacy_test_id, PRACTICE_INITIAL_COUNT, now_iso),
+            )
+            conn.commit()
             conn.close()
             return {
-                "success":            False,
+                "success":            True,
                 "user_id":            user_id,
                 "literacy_test_id":   literacy_test_id,
-                "restored":           0,
+                "restored":           count,
+                "requested":          count,
                 "tutorial_attempts":  PRACTICE_INITIAL_COUNT,
                 "tutorial_used":      0,
                 "remaining":          PRACTICE_INITIAL_COUNT,
-                "reason":             f"사전연습 사용 이력이 없습니다 (잔여 {PRACTICE_INITIAL_COUNT}회)",
+                "note":               "신규 레코드 생성 (사전연습 사용 이력 없음, 복구 완료)",
             }
 
         current_attempts = row["tutorial_attempts"]
         current_used     = row["tutorial_used"]
 
-        # 상한 체크: 복구 후 attempts가 PRACTICE_INITIAL_COUNT(100)을 초과하지 않도록
-        max_restore = max(0, PRACTICE_INITIAL_COUNT - current_attempts)
-        actual_count = min(count, max_restore)
+        # 복구 = tutorial_used 차감 (잘못 차감된 사용 횟수를 되돌림)
+        actual_count = min(count, current_used)  # 0 미만으로 내려가지 않도록
 
         if actual_count <= 0:
             conn.close()
+            remaining = current_attempts - current_used
             return {
-                "success":            False,
+                "success":            True,
                 "user_id":            user_id,
                 "literacy_test_id":   literacy_test_id,
                 "restored":           0,
                 "tutorial_attempts":  current_attempts,
                 "tutorial_used":      current_used,
-                "remaining":          current_attempts - current_used,
-                "reason":             f"이미 최대 횟수({PRACTICE_INITIAL_COUNT}회)에 도달하여 추가 복구 불가",
+                "remaining":          remaining,
+                "note":               f"사용 횟수가 0이므로 차감할 것이 없습니다 (잔여 {remaining}회)",
             }
 
         conn.execute(
-            """
+            f"""
             UPDATE practice_sessions
-            SET tutorial_attempts = tutorial_attempts + ?,
-                last_restore_at   = ?
-            WHERE user_id = ? AND literacy_test_id = ?
+            SET tutorial_used   = tutorial_used - ?,
+                last_restore_at = ?
+            WHERE {_where}
             """,
-            (actual_count, now_iso, user_id, literacy_test_id),
+            (actual_count, now_iso) + _params,
         )
         conn.commit()
         row = conn.execute(
-            "SELECT tutorial_attempts, tutorial_used FROM practice_sessions "
-            "WHERE user_id=? AND literacy_test_id=?",
-            (user_id, literacy_test_id),
+            f"SELECT tutorial_attempts, tutorial_used FROM practice_sessions WHERE {_where}",
+            _params,
         ).fetchone()
         conn.close()
 
@@ -682,7 +697,7 @@ class UserContextDB:
             "literacy_test_id":   literacy_test_id,
             "restored":           actual_count,
             "requested":          count,
-            "tutorial_attempts":  row["tutorial_attempts"] if row else actual_count,
+            "tutorial_attempts":  row["tutorial_attempts"] if row else current_attempts,
             "tutorial_used":      row["tutorial_used"] if row else 0,
             "remaining":          remaining,
         }
