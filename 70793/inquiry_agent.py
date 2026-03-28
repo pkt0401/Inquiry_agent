@@ -34,7 +34,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from openai import AzureOpenAI
 from dotenv import load_dotenv
-from user_db import UserContextDB
+from user_db import UserContextDB, CODE_REVIEW_DAILY_LIMIT
 from tools import GROUP3_LABELS, get_tool_type, execute_tool_action
 load_dotenv()
 # ──────────────────────────────────────────────────────────────────
@@ -1156,8 +1156,8 @@ def _answer_similarity(vs: 'VectorStore', a: str, b: str) -> float:
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="AI Talent Lab 문의 Agent PoC")
-    parser.add_argument("--n-test",       type=int, default=10,  help="테스트케이스 수 (기본 10)")
-    parser.add_argument("--random-state", type=int, default=42,  help="랜덤 시드 (기본 42)")
+    parser.add_argument("--n-test",       type=int, default=20,  help="테스트케이스 수 (기본 10)")
+    parser.add_argument("--random-state", type=int, default=12,  help="랜덤 시드 (기본 42)")
     args = parser.parse_args()
 
     import time as _time
@@ -1252,6 +1252,31 @@ def main():
             mode = "multi-RAG 합산" if multi_rag else "human_review 라우팅"
             print(f"[복합 문의]   sub_labels={sub_labels}  ({mode})")
         print(f"[판단 근거]   {response.reasoning}")
+
+        # Tool 실행 결과 출력 (Group 3 경로)
+        if response.tool_result is not None:
+            tr = response.tool_result
+            tool_type_label = {"auto": "AUTO_TOOL", "approval": "APPROVAL_TOOL"}.get(response.tool_type, response.tool_type)
+            print(f"[Tool 종류]   {tool_type_label}")
+            if tr.get("success"):
+                print(f"[Tool 결과]   ✅ 성공")
+                if "prev_used" in tr:
+                    # CODE_REVIEW_RESET
+                    print(f"  → 리셋 전 사용 횟수: {tr.get('prev_used', 0)}회")
+                    print(f"  → 리셋 후 남은 횟수: {CODE_REVIEW_DAILY_LIMIT}회 (일일 한도)")
+                    print(f"  → 대상 lecture_id: {tr.get('lecture_id', 'N/A')}")
+                    print(f"  → 누적 리셋 횟수: {tr.get('reset_count', 'N/A')}")
+                elif "restored" in tr:
+                    # LITERACY_PRACTICE_RESET
+                    print(f"  → 복구 횟수: {tr.get('restored', 0)}회")
+                    print(f"  → 총 부여: {tr.get('tutorial_attempts', 'N/A')}회 / 사용: {tr.get('tutorial_used', 'N/A')}회")
+                    print(f"  → 남은 연습 횟수: {tr.get('remaining', 'N/A')}회")
+                    print(f"  → 대상 literacy_test_id: {tr.get('literacy_test_id', 'N/A')}")
+                if tr.get("user_identifier"):
+                    print(f"  → 사용자: {tr['user_identifier']}")
+            else:
+                print(f"[Tool 결과]   ❌ 실패")
+                print(f"  → 사유: {tr.get('reason', '알 수 없음')}")
 
         if response.answer:
             print(f"\n[생성된 답변]\n{response.answer}")
