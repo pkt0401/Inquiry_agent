@@ -265,6 +265,121 @@ def _insert_dummy_data(conn: sqlite3.Connection):
           f"(코드리뷰 {len(review_heavy_users)}건, 사전연습 {len(practice_users_data)}건)")
 
 
+def insert_test_users(author_ids: list, db_path: str = DB_PATH, seed: int = 99):
+    """
+    테스트셋 가상 유저들의 랜덤 수강 이력 + 코드리뷰/사전연습 데이터를 DB에 삽입.
+    이미 존재하는 author_id는 건너뜀.
+    """
+    import datetime
+    rng = random.Random(seed)
+    conn = get_connection(db_path)
+
+    # 기존 cohort_id 조회
+    cohorts = {}
+    for row in conn.execute("SELECT id, program, cohort_name FROM cohorts").fetchall():
+        cohorts[(row["program"], row["cohort_name"])] = row["id"]
+
+    bc_12 = cohorts.get(("AI Bootcamp", "12기"))
+    bc_11 = cohorts.get(("AI Bootcamp", "11기"))
+    bc_10 = cohorts.get(("AI Bootcamp", "10기"))
+    lit   = cohorts.get(("AI Literacy", "상시"))
+    mp    = cohorts.get(("AI Master Project", "4기"))
+
+    today = datetime.date.today().isoformat()
+    inserted = 0
+    review_cnt = 0
+    practice_cnt = 0
+
+    for uid in author_ids:
+        # 이미 있으면 건너뜀
+        existing = conn.execute("SELECT id FROM users WHERE id=?", (uid,)).fetchone()
+        if existing:
+            continue
+
+        conn.execute("INSERT INTO users (id, name, email) VALUES (?,?,?)",
+                     (uid, f"test_user_{uid}", f"test_{uid}@example.com"))
+
+        r = rng.random()
+
+        if r < 0.10:
+            # 10기 미수료 → 12기 재수강
+            conn.execute(
+                "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                (uid, bc_10, "failed", round(rng.uniform(30, 59), 1), "최종과제 미제출로 미수료"))
+            conn.execute(
+                "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                (uid, bc_12, "in_progress", None, "재수강"))
+        elif r < 0.20:
+            # 11기 미수료 → 12기 재수강
+            conn.execute(
+                "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                (uid, bc_11, "failed", round(rng.uniform(20, 59), 1), "최종과제 점수 미달"))
+            conn.execute(
+                "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                (uid, bc_12, "in_progress", None, "재수강"))
+        elif r < 0.40:
+            # 12기 신규 수강중
+            conn.execute(
+                "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                (uid, bc_12, "in_progress", None, None))
+        elif r < 0.55:
+            # AI Literacy 수강 중
+            conn.execute(
+                "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                (uid, lit, "in_progress", None, None))
+        elif r < 0.70:
+            # AI Literacy + Bootcamp 12기 동시 수강
+            conn.execute(
+                "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                (uid, lit, "in_progress", None, None))
+            conn.execute(
+                "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                (uid, bc_12, "in_progress", None, None))
+        elif r < 0.82:
+            # 11기 수료 + Literacy 수료
+            conn.execute(
+                "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                (uid, bc_11, "completed", round(rng.uniform(70, 100), 1), None))
+            conn.execute(
+                "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                (uid, lit, "completed", None, "인증시험 합격"))
+        elif r < 0.90:
+            # Master Project 진행중
+            if mp:
+                conn.execute(
+                    "INSERT INTO enrollments (user_id, cohort_id, status, final_score, note) VALUES (?,?,?,?,?)",
+                    (uid, mp, "in_progress", None, None))
+        # else: 수강 이력 없음
+
+        # 랜덤으로 코드리뷰 사용 이력 생성 (30% 확률)
+        if rng.random() < 0.30:
+            used = rng.randint(5, 10)
+            conn.execute(
+                "INSERT OR IGNORE INTO code_review_logs "
+                "(user_id, review_dt, used_count, reset_count) VALUES (?,?,?,0)",
+                (uid, today, used))
+            review_cnt += 1
+
+        # 랜덤으로 사전연습 사용 이력 생성 (25% 확률)
+        if rng.random() < 0.25:
+            attempts = 100
+            used = rng.randint(80, 100)
+            lit_test_id = lit * 10 + 1 if lit else None
+            conn.execute(
+                "INSERT OR IGNORE INTO practice_sessions "
+                "(user_id, literacy_test_id, tutorial_attempts, tutorial_used) VALUES (?,?,?,?)",
+                (uid, lit_test_id, attempts, used))
+            practice_cnt += 1
+
+        inserted += 1
+
+    conn.commit()
+    conn.close()
+    print(f"[user_db] 테스트 유저 삽입: {inserted}명 "
+          f"(코드리뷰 {review_cnt}건, 사전연습 {practice_cnt}건)")
+    return inserted
+
+
 # ──────────────────────────────────────────────────────────────────
 # 조회 API
 # ──────────────────────────────────────────────────────────────────

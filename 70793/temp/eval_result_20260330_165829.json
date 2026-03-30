@@ -1,0 +1,79 @@
+{
+  "eval_info": {
+    "timestamp": "20260330_165829",
+    "test_file": "test_set_1.json",
+    "total_cases": 3,
+    "rag_pool_size": 105
+  },
+  "summary": {
+    "strategy_counts": {
+      "운영자 에스컬레이션": 0,
+      "RAG 초안 + 운영자 검토": 3,
+      "RAG 자동 답변 게시": 0,
+      "에이전트 직접 실행": 0
+    },
+    "compound_count": 0
+  },
+  "results": [
+    {
+      "번호": 1,
+      "id": 10008,
+      "source": "expected_examples",
+      "author_id": 90009,
+      "title": "모델 구현 질문",
+      "content": "실습환경내에서, Azure OpenAI모델을 지금처럼 gpt-4o-mini모델이 아니라, 더 최신모델로 바꿔도 되나요?",
+      "personal_context": "## 문의자 수강 이력\n- 현재 과정: AI Bootcamp 12기 (진행중) — 재수강 (10기 미수료 이력 있음)\n- 전체 이력:\n  · AI Bootcamp 10기: 미수료 (점수: 35.9) — 최종과제 미제출로 미수료\n  · AI Bootcamp 12기: 진행중 — 재수강",
+      "label": "ASSIGNMENT_DEVELOPMENT",
+      "confidence": "high",
+      "strategy": "RAG 초안 + 운영자 검토",
+      "reasoning": "실습/과제 구현 시 Azure OpenAI에서 사용하는 모델을 더 최신 모델로 변경해도 되는지에 대한 개발/구현 방향 문의 [RAG 유사도 낮음: 0.420 < 0.65]",
+      "is_compound": false,
+      "sub_labels": [],
+      "answer": "[초안] 안녕하세요, AI Talent Lab입니다.\n\n실습환경에서는 Azure OpenAI 접속 정보(API Key/Endpoint 등)가 자동으로 제공되며, 실습 코드는 강의에서 안내된 Azure OpenAI “배포(Deployment) 이름”을 기준으로 동작합니다. 따라서 단순히 모델명을 최신 모델로 바꾸는 방식으로는 동작하지 않을 수 있고(배포명이 일치하지 않으면 오류 발생), 플랫폼에 해당 최신 모델 배포가 준비되어 있어야 변경이 가능합니다.\n\n원하시는 “최신 모델명”과 현재 사용 중인 호출 코드(모델/배포명 지정 부분)를 알려주시면, 실습환경에서 변경 가능 여부를 확인 후 안내드리겠습니다.\n\n감사합니다.",
+      "answer_confidence": "medium",
+      "tool_type": "",
+      "tool_result": null,
+      "actual_answer": ""
+    },
+    {
+      "번호": 2,
+      "id": 10008,
+      "source": "expected_examples",
+      "author_id": 90008,
+      "title": "제출양식 질문",
+      "content": "AI BootCamp 과제 제출 양식의 순서에 따라 안올렸는데, 이것도 고려해서 채점이 되나요?",
+      "personal_context": "## 문의자 수강 이력\n- 현재 과정: AI Literacy 상시 (진행중)\n- 전체 이력:\n  · AI Literacy 상시: 진행중",
+      "label": "SUBMISSION_POLICY",
+      "confidence": "high",
+      "strategy": "RAG 초안 + 운영자 검토",
+      "reasoning": "AI Bootcamp 최종과제 제출 시 양식(순서) 미준수에 따른 채점 반영 여부를 질문하는 과제 제출/평가 정책 문의임 [RAG 유사도 낮음: 0.615 < 0.65]",
+      "is_compound": false,
+      "sub_labels": [],
+      "answer": "[초안] 안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp 최종과제는 재제출이 가능하며, 최종 평가는 마지막 제출본(마지막 제출 코드) 기준으로 진행됩니다. 따라서 제출양식의 ‘순서’대로 올리지 못하셨더라도, 최종적으로 제출된 내용(필수 기술요소 충실 활용 여부 및 코드리뷰 5가지 기준 중심)을 기준으로 평가가 진행됩니다.\n\n다만 심사자가 확인하기 쉽도록, 가능하시다면 제출 페이지에 안내된 항목 구성에 맞춰 정리하여 한 번 더 재제출해 주시는 것을 권장드립니다.\n\n감사합니다.",
+      "answer_confidence": "high",
+      "tool_type": "",
+      "tool_result": null,
+      "actual_answer": ""
+    },
+    {
+      "번호": 3,
+      "id": 10008,
+      "source": "expected_examples",
+      "author_id": 90009,
+      "title": "코드 리뷰 질문",
+      "content": "코드 리뷰 횟수가 리셋되는 시점이 자정인가요? 몇 시에 초기화되나요?",
+      "personal_context": "## 문의자 수강 이력\n- 현재 과정: AI Bootcamp 12기 (진행중) — 재수강 (10기 미수료 이력 있음)\n- 전체 이력:\n  · AI Bootcamp 10기: 미수료 (점수: 35.9) — 최종과제 미제출로 미수료\n  · AI Bootcamp 12기: 진행중 — 재수강",
+      "label": "SERVICE_GUIDE",
+      "confidence": "high",
+      "strategy": "RAG 초안 + 운영자 검토",
+      "reasoning": "코드 리뷰 이용 정책(횟수 초기화 시점/시간) 안내를 묻는 플랫폼 사용 가이드 성격의 문의임 [RAG 유사도 낮음: 0.623 < 0.65]",
+      "is_compound": false,
+      "sub_labels": [],
+      "answer": "[초안] 안녕하세요, AI Talent Lab입니다.\n\n네, 웹 IDE 내 코드 리뷰 요청 횟수(하루 10회)는 매일 자정(00:00)에 자동으로 초기화됩니다.\n\n감사합니다.",
+      "answer_confidence": "high",
+      "tool_type": "",
+      "tool_result": null,
+      "actual_answer": ""
+    }
+  ]
+}

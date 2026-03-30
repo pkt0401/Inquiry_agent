@@ -1,0 +1,59 @@
+{
+  "eval_info": {
+    "timestamp": "20260330_162541",
+    "test_file": "test_set_1.json",
+    "total_cases": 2,
+    "rag_pool_size": 105
+  },
+  "summary": {
+    "strategy_counts": {
+      "운영자 에스컬레이션": 0,
+      "RAG 초안 + 운영자 검토": 1,
+      "RAG 자동 답변 게시": 1,
+      "에이전트 직접 실행": 0
+    },
+    "compound_count": 0
+  },
+  "results": [
+    {
+      "번호": 1,
+      "id": 10008,
+      "source": "expected_examples",
+      "author_id": 90008,
+      "title": "AI BootCamp 과제 제출 양식의 순서에 따라 안올렸는데, 이것도 고려해서 채점이 되나요?",
+      "content": "",
+      "personal_context": "## 문의자 수강 이력\n- 현재 과정: AI Literacy 상시 (진행중)\n- 전체 이력:\n  · AI Literacy 상시: 진행중",
+      "label": "SUBMISSION_POLICY",
+      "confidence": "high",
+      "strategy": "RAG 자동 답변 게시",
+      "reasoning": "AI Bootcamp 최종과제 제출 시 제출 양식(순서) 미준수가 채점에 영향이 있는지 여부를 묻는 과제 제출/평가 정책 문의",
+      "is_compound": false,
+      "sub_labels": [],
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Bootcamp 최종과제는 제출 양식(단계) 순서대로 올리지 않으셨더라도, 제출된 최종 소스코드 기준으로 평가가 진행됩니다. 또한 제출은 여러 번 가능하며, 재제출하신 경우에는 마지막 제출본을 기준으로 최종 평가됩니다.\n\n정리(또는 제출 단계 순서)가 걱정되시면 혼선 방지를 위해 한 번 더 정리해서 재제출하셔도 무방합니다.\n\n감사합니다.",
+      "answer_confidence": "high",
+      "tool_type": "",
+      "tool_result": null,
+      "actual_answer": ""
+    },
+    {
+      "번호": 2,
+      "id": 10008,
+      "source": "expected_examples",
+      "author_id": 90009,
+      "title": "코드 리뷰 횟수가 리셋되는 시점이 자정인가요? 몇 시에 초기화되나요?",
+      "content": "",
+      "personal_context": "## 문의자 수강 이력\n- 현재 과정: AI Bootcamp 12기 (진행중) — 재수강 (10기 미수료 이력 있음)\n- 전체 이력:\n  · AI Bootcamp 10기: 미수료 (점수: 35.9) — 최종과제 미제출로 미수료\n  · AI Bootcamp 12기: 진행중 — 재수강",
+      "label": "SERVICE_GUIDE",
+      "confidence": "high",
+      "strategy": "RAG 초안 + 운영자 검토",
+      "reasoning": "코드 리뷰 기능의 이용/초기화 시간(플랫폼 사용 가이드) 문의로, 정책/절차 안내 성격임 [RAG 유사도 낮음: 0.637 < 0.65]",
+      "is_compound": false,
+      "sub_labels": [],
+      "answer": "[초안] 안녕하세요, AI Talent Lab입니다.\n\n웹 IDE 내 코드 리뷰 요청 횟수(하루 10회)는 매일 자정(00:00)에 자동으로 초기화됩니다.\n\n감사합니다.",
+      "answer_confidence": "high",
+      "tool_type": "",
+      "tool_result": null,
+      "actual_answer": ""
+    }
+  ]
+}

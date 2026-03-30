@@ -1,0 +1,59 @@
+{
+  "eval_info": {
+    "timestamp": "20260330_153429",
+    "test_file": "test_set_1.json",
+    "total_cases": 2,
+    "rag_pool_size": 105
+  },
+  "summary": {
+    "strategy_counts": {
+      "운영자 에스컬레이션": 0,
+      "RAG 초안 + 운영자 검토": 2,
+      "RAG 자동 답변 게시": 0,
+      "에이전트 직접 실행": 0
+    },
+    "compound_count": 0
+  },
+  "results": [
+    {
+      "번호": 1,
+      "id": 10008,
+      "source": "expected_examples",
+      "author_id": 90008,
+      "title": "실습환경내에서, Azure OpenAI모델을 지금처럼 gpt-4o-mini모델이 아니라, 더 최신모델로 바꿔도 되나요?",
+      "content": "",
+      "personal_context": "## 문의자 수강 이력\n- 현재 과정: AI Literacy 상시 (진행중)\n- 전체 이력:\n  · AI Literacy 상시: 진행중",
+      "label": "SERVICE_GUIDE",
+      "confidence": "high",
+      "strategy": "RAG 초안 + 운영자 검토",
+      "reasoning": "실습 환경에서 Azure OpenAI 모델 변경 가능 여부(플랫폼 사용/설정 가능 범위)에 대한 문의로 플랫폼 이용 가이드에 해당 [RAG 유사도 낮음: 0.420 < 0.65]",
+      "is_compound": false,
+      "sub_labels": [],
+      "answer": "[초안] 안녕하세요, AI Talent Lab입니다.\n\n실습환경(Jupyter/IDE)에서 사용하는 Azure OpenAI는 플랫폼에서 미리 설정해 둔 값(엔드포인트/키 및 사용 가능한 배포명)을 기준으로 동작합니다. 따라서 코드에서 임의로 모델을 “더 최신 모델”로 변경해 호출하시는 것은, 해당 모델이 플랫폼에 배포(deployment)로 등록되어 있는 경우에만 가능합니다.\n\n즉, 단순히 모델명을 gpt-4o-mini에서 다른 이름으로 바꾸면 400 오류(배포명 불일치 등)가 발생할 수 있습니다. 사용 가능한 모델(배포명) 목록은 실습 안내/강의에서 지정된 값으로 사용해 주세요.\n\n원하시는 “최신 모델”의 사용 가능 여부(배포명 포함)는 확인 후 안내드리겠습니다.\n감사합니다.",
+      "answer_confidence": "medium",
+      "tool_type": "",
+      "tool_result": null,
+      "actual_answer": ""
+    },
+    {
+      "번호": 2,
+      "id": 10008,
+      "source": "expected_examples",
+      "author_id": 90008,
+      "title": "실습환경내에서, Azure OpenAI모델을 지금처럼 gpt-4o-mini모델이 아니라, 더 최신모델로 바꿔도 되나요?",
+      "content": "",
+      "personal_context": "## 문의자 수강 이력\n- 현재 과정: AI Literacy 상시 (진행중)\n- 전체 이력:\n  · AI Literacy 상시: 진행중",
+      "label": "SERVICE_GUIDE",
+      "confidence": "high",
+      "strategy": "RAG 초안 + 운영자 검토",
+      "reasoning": "실습환경에서 Azure OpenAI 모델을 다른/최신 모델로 변경 가능한지에 대한 플랫폼 사용(환경 설정) 문의임 [RAG 유사도 낮음: 0.420 < 0.65]",
+      "is_compound": false,
+      "sub_labels": [],
+      "answer": "[초안] 안녕하세요, AI Talent Lab입니다.\n\n실습환경에서 사용 가능한 Azure OpenAI 모델(정확히는 배포된 deployment)은 플랫폼에서 사전에 제공/허용된 범위 내에서만 변경하여 사용하실 수 있습니다. 따라서 코드에서 임의로 더 최신 모델명으로 바꾸더라도, 해당 모델이 실습환경에 배포되어 있지 않으면 호출 시 오류(예: 400)가 발생할 수 있습니다.\n\n원하시는 최신 모델로 변경 가능 여부는 사용 중인 실습 과정/환경에 해당 deployment가 제공되는지 확인이 필요합니다. 사용 중인 코드의 모델(또는 deployment) 설정 값과, 변경을 원하시는 모델명을 함께 알려주시면 확인 후 안내드리겠습니다.\n\n감사합니다.",
+      "answer_confidence": "medium",
+      "tool_type": "",
+      "tool_result": null,
+      "actual_answer": ""
+    }
+  ]
+}

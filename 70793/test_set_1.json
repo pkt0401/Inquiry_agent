@@ -1,0 +1,41 @@
+[      {
+    "id": 10008,
+    "title": "모델 구현 질문",
+    "content": "실습환경내에서, Azure OpenAI모델을 지금처럼 gpt-4o-mini모델이 아니라, 더 최신모델로 바꿔도 되나요?",
+    "author_id": 90009,
+    "file_ids": "[]",
+    "group_id": null,
+    "status": "open",
+    "is_pinned": 0,
+    "create_dt": "2026-03-30 09:00:00",
+    "update_dt": "2026-03-30 09:00:00",
+       "source": "expected_examples"
+      },
+  {
+    "id": 10008,
+    "title": "제출양식 질문",
+    "content": "AI BootCamp 과제 제출 양식의 순서에 따라 안올렸는데, 이것도 고려해서 채점이 되나요?",
+    "author_id": 90008,
+    "file_ids": "[]",
+    "group_id": null,
+    "status": "open",
+    "is_pinned": 0,
+    "create_dt": "2026-03-30 09:00:00",
+    "update_dt": "2026-03-30 09:00:00",
+    "source": "expected_examples"
+  },
+    {
+    "id": 10008,
+    "title": "코드 리뷰 질문",
+    "content": "코드 리뷰 횟수가 리셋되는 시점이 자정인가요? 몇 시에 초기화되나요?",
+    "author_id": 90009,
+    "file_ids": "[]",
+    "group_id": null,
+    "status": "open",
+    "is_pinned": 0,
+    "create_dt": "2026-03-30 09:00:00",
+    "update_dt": "2026-03-30 09:00:00",
+    "source": "expected_examples"
+  }
+
+]

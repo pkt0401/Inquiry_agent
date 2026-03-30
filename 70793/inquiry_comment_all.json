@@ -70,16 +70,6 @@
     "update_dt": "2025-12-19 05:29:47"
   },
   {
-    "id": 15,
-    "inquiry_id": 17,
-    "content": "<p>안녕하세요. AI Bootcamp 9기 최종 결과 발표는 12월 22일 17:00 예정입니다.</p><p>결과 발표 후 확인이 가능한 시점에 이메일, Slack 채널로 안내됩니다.</p>",
-    "author_id": 7,
-    "file_ids": null,
-    "is_admin": 1,
-    "create_dt": "2025-12-19 08:13:05",
-    "update_dt": "2025-12-19 08:13:05"
-  },
-  {
     "id": 16,
     "inquiry_id": 18,
     "content": "<p>안녕하세요.<br style=\" font-style: normal\">AI Literacy 인증 시작하기 버튼은 인증 시험 응시자 대상으로 응시 기간 내 활성화됩니다.<br style=\" font-style: normal\">인증 대상자 안내를 받지 않으셨다면 비활성화 상태가 기본값입니다.</p>",

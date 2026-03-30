@@ -1137,33 +1137,15 @@ def _load_dotenv():
             break
 
 
-def _answer_similarity(vs: 'VectorStore', a: str, b: str) -> float:
-    """두 답변 텍스트의 임베딩 코사인 유사도."""
-    if not a or not b:
-        return 0.0
-    for text in (a, b):
-        key = vs._key(text[:8000])
-        if key not in vs._emb_cache:
-            resp = vs._client.embeddings.create(model=vs.EMBED_MODEL, input=text[:8000])
-            vs._emb_cache[key] = resp.data[0].embedding
-    va = np.array(vs._emb_cache[vs._key(a[:8000])], dtype=np.float32)
-    vb = np.array(vs._emb_cache[vs._key(b[:8000])], dtype=np.float32)
-    va /= max(np.linalg.norm(va), 1e-8)
-    vb /= max(np.linalg.norm(vb), 1e-8)
-    return float(np.dot(va, vb))
-
-
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="AI Talent Lab 문의 Agent PoC")
     parser.add_argument("--n-test",       type=int, default=20,  help="테스트케이스 수 (기본 10)")
     parser.add_argument("--random-state", type=int, default=12,  help="랜덤 시드 (기본 42)")
+    parser.add_argument("--test-file",    type=str, default=None, help="테스트셋 JSON 파일 경로 (지정하면 해당 파일로 평가)")
     args = parser.parse_args()
 
     import time as _time
-
-    print("=== AI Talent Lab 문의 Agent PoC ===\n")
-    print(f"random_state={args.random_state}  n_test={args.n_test}\n", flush=True)
 
     _load_dotenv()
 
@@ -1183,21 +1165,41 @@ def main():
     print(f"[타이머] JSON 로드: {_time.time()-t0:.1f}s", flush=True)
     print(f"통합 문의 데이터: {len(all_inquiries)}건 / 댓글: {len(all_comments)}건", flush=True)
 
-    # 관리자 답변이 있는 문의만 테스트 대상으로 추출 (비교 가능한 것만)
+    # 관리자 답변이 있는 문의만 comment_map 구성
     admin_ids = agent.ADMIN_IDS
     comment_map: Dict[int, List[Dict]] = {}
     for c in all_comments:
         if c.get('author_id') in admin_ids:
             comment_map.setdefault(c['inquiry_id'], []).append(c)
 
-    has_answer = [inq for inq in all_inquiries if inq['id'] in comment_map]
+    # ── 테스트셋 결정 ──────────────────────────────────────────────
+    if args.test_file:
+        # 외부 테스트셋 JSON 사용
+        test_file = args.test_file if os.path.isabs(args.test_file) else os.path.join(base_path, args.test_file)
+        test_cases = load_json_file(test_file)
+        test_ids = {inq['id'] for inq in test_cases}
 
-    rng = random.Random(args.random_state)
-    n = min(args.n_test, len(has_answer))
-    test_cases = rng.sample(has_answer, n)
-    test_ids   = {inq['id'] for inq in test_cases}
+        # 테스트셋의 가상 유저들을 DB에 삽입 (랜덤 수강 이력 생성)
+        from user_db import insert_test_users
+        fake_author_ids = [inq['author_id'] for inq in test_cases if inq.get('author_id', 0) >= 90000]
+        if fake_author_ids:
+            insert_test_users(fake_author_ids)
 
-    # 테스트셋을 제외한 나머지를 RAG pool로 사용 (관리자 답변 있는 것만)
+        print(f"\n=== AI Talent Lab 문의 Agent 평가 (외부 테스트셋) ===")
+        print(f"테스트 파일: {args.test_file}")
+        print(f"테스트셋: {len(test_cases)}건\n", flush=True)
+    else:
+        # 기존 방식: inquiry_all.json에서 랜덤 샘플링
+        has_answer = [inq for inq in all_inquiries if inq['id'] in comment_map]
+        rng = random.Random(args.random_state)
+        n = min(args.n_test, len(has_answer))
+        test_cases = rng.sample(has_answer, n)
+        test_ids = {inq['id'] for inq in test_cases}
+
+        print(f"\n=== AI Talent Lab 문의 Agent PoC ===")
+        print(f"random_state={args.random_state}  n_test={args.n_test}\n", flush=True)
+
+    # RAG pool: 테스트셋 제외한 나머지 (관리자 답변 있는 것만)
     rag_pool = [inq for inq in all_inquiries if inq['id'] not in test_ids and inq['id'] in comment_map]
     print(f"테스트셋: {len(test_cases)}건 / RAG pool: {len(rag_pool)}건", flush=True)
 
@@ -1213,6 +1215,8 @@ def main():
         Strategy.TOOL_RAG:     "RAG 자동 답변 게시",
         Strategy.TOOL_ACTION:  "에이전트 직접 실행",
     }
+
+    results = []  # 결과 저장용
 
     for i, test_inquiry in enumerate(test_cases, 1):
         title   = test_inquiry.get('title', '')
@@ -1261,13 +1265,11 @@ def main():
             if tr.get("success"):
                 print(f"[Tool 결과]   ✅ 성공")
                 if "prev_used" in tr:
-                    # CODE_REVIEW_RESET
                     print(f"  → 리셋 전 사용 횟수: {tr.get('prev_used', 0)}회")
                     print(f"  → 리셋 후 남은 횟수: {CODE_REVIEW_DAILY_LIMIT}회 (일일 한도)")
                     print(f"  → 대상 lecture_id: {tr.get('lecture_id', 'N/A')}")
                     print(f"  → 누적 리셋 횟수: {tr.get('reset_count', 'N/A')}")
                 elif "restored" in tr:
-                    # LITERACY_PRACTICE_RESET
                     print(f"  → 복구 횟수: {tr.get('restored', 0)}회")
                     print(f"  → 총 부여: {tr.get('tutorial_attempts', 'N/A')}회 / 사용: {tr.get('tutorial_used', 'N/A')}회")
                     print(f"  → 남은 연습 횟수: {tr.get('remaining', 'N/A')}회")
@@ -1283,9 +1285,64 @@ def main():
 
         if actual_text:
             print(f"\n[실제 관리자 답변]\n{actual_text[:400]}{'...' if len(actual_text) > 400 else ''}")
-            if response.answer and agent.vector_store:
-                sim = _answer_similarity(agent.vector_store, response.answer, actual_text)
-                print(f"\n[답변 유사도]  {sim*100:.1f}%")
+
+        # 결과 저장
+        result_entry = {
+            "번호": i,
+            "id": test_inquiry.get('id'),
+            "source": test_inquiry.get('source', 'inquiry_all'),
+            "author_id": test_inquiry.get('author_id'),
+            "title": title,
+            "content": content_preview,
+            "personal_context": personal_ctx or "(수강 이력 없음)",
+            "label": response.label.value,
+            "confidence": response.confidence_level.value,
+            "strategy": strategy_labels[response.strategy],
+            "reasoning": response.reasoning,
+            "is_compound": response.is_compound,
+            "sub_labels": response.sub_labels if response.is_compound else [],
+            "answer": response.answer or "",
+            "answer_confidence": response.answer_confidence,
+            "tool_type": response.tool_type,
+            "tool_result": response.tool_result,
+            "actual_answer": actual_text,
+        }
+        results.append(result_entry)
+
+    # ── 결과 파일 저장 ──────────────────────────────────────────────
+    import datetime as _dt
+    timestamp = _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+    result_filename = f"eval_result_{timestamp}.json"
+    result_path = os.path.join(base_path, result_filename)
+
+    with open(result_path, 'w', encoding='utf-8') as f:
+        json.dump({
+            "eval_info": {
+                "timestamp": timestamp,
+                "test_file": args.test_file or "inquiry_all (random sampling)",
+                "total_cases": len(results),
+                "rag_pool_size": len(rag_pool),
+            },
+            "summary": {
+                "strategy_counts": {
+                    label: sum(1 for r in results if r["strategy"] == label)
+                    for label in strategy_labels.values()
+                },
+                "compound_count": sum(1 for r in results if r["is_compound"]),
+            },
+            "results": results,
+        }, f, ensure_ascii=False, indent=2)
+
+    print(f"\n{'='*60}")
+    print(f"결과 저장 완료: {result_filename}")
+    print(f"총 {len(results)}건 평가")
+    for label, cnt in {
+        label: sum(1 for r in results if r["strategy"] == label)
+        for label in strategy_labels.values()
+    }.items():
+        if cnt > 0:
+            print(f"  {label}: {cnt}건")
+    print(f"{'='*60}")
 
 
 if __name__ == "__main__":
