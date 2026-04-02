@@ -2,7 +2,7 @@
   {
     "id": 10001,
     "title": "지난 기수에서 AI Bootcamp 최종과제를 제출하지 못해 미수료 처리되었는데, 다음 기수에 다시 신청할 수 있나요?",
-    "content": "",
+    "content": "<p>지난 기수에서 AI Bootcamp 최종과제를 제출하지 못해 미수료 처리되었는데, 다음 기수에 다시 신청할 수 있나요?</p>",
     "author_id": 90001,
     "file_ids": "[]",
     "group_id": null,
@@ -15,7 +15,7 @@
   {
     "id": 10002,
     "title": "AI Literacy 인증시험에서 불합격하면 다음 차수에 다시 응시할 수 있나요?",
-    "content": "",
+    "content": "<p>AI Literacy 인증시험에서 불합격하면 다음 차수에 다시 응시할 수 있나요?</p>",
     "author_id": 90002,
     "file_ids": "[]",
     "group_id": null,
@@ -28,7 +28,7 @@
   {
     "id": 10003,
     "title": "출장으로 2주간 학습을 못 했는데, AI Bootcamp 수강 기간을 연장받을 수 있나요?",
-    "content": "",
+    "content": "<p>출장으로 2주간 학습을 못 했는데, AI Bootcamp 수강 기간을 연장받을 수 있나요?</p>",
     "author_id": 90003,
     "file_ids": "[]",
     "group_id": null,
@@ -41,7 +41,7 @@
   {
     "id": 10004,
     "title": "AI Literacy 인증시험 준비와 AI Bootcamp를 동시에 진행해도 되나요?",
-    "content": "",
+    "content": "<p>AI Literacy 인증시험 준비와 AI Bootcamp를 동시에 진행해도 되나요?</p>",
     "author_id": 90004,
     "file_ids": "[]",
     "group_id": null,
@@ -54,7 +54,7 @@
   {
     "id": 10005,
     "title": "코드 리뷰에서 평가하는 5가지 항목이 구체적으로 무엇인가요?",
-    "content": "",
+    "content": "<p>코드 리뷰에서 평가하는 5가지 항목이 구체적으로 무엇인가요?</p>",
     "author_id": 90005,
     "file_ids": "[]",
     "group_id": null,
@@ -67,7 +67,7 @@
   {
     "id": 10006,
     "title": "최종과제 기획 설계 문서를 작성할 때 정해진 양식이나 템플릿이 있나요?",
-    "content": "",
+    "content": "<p>최종과제 기획 설계 문서를 작성할 때 정해진 양식이나 템플릿이 있나요?</p>",
     "author_id": 90006,
     "file_ids": "[]",
     "group_id": null,
@@ -80,7 +80,7 @@
   {
     "id": 10007,
     "title": "AI Bootcamp 수료하려면 최종과제에서 몇 점 이상을 받아야 하나요? 과제를 제출만 하면 수료가 되나요?",
-    "content": "",
+    "content": "<p>AI Bootcamp 수료하려면 최종과제에서 몇 점 이상을 받아야 하나요? 과제를 제출만 하면 수료가 되나요?</p>",
     "author_id": 90007,
     "file_ids": "[]",
     "group_id": null,
@@ -93,7 +93,7 @@
   {
     "id": 10008,
     "title": "실습환경내에서, Azure OpenAI모델을 지금처럼 gpt-4o-mini모델이 아니라, 더 최신모델로 바꿔도 되나요?",
-    "content": "",
+    "content": "<p>실습환경내에서, Azure OpenAI모델을 지금처럼 gpt-4o-mini모델이 아니라, 더 최신모델로 바꿔도 되나요?</p>",
     "author_id": 90008,
     "file_ids": "[]",
     "group_id": null,
@@ -106,7 +106,7 @@
   {
     "id": 10009,
     "title": "AI Bootcamp 10기 이전에 수강했는데 12기로 재수강하려면 처음부터 다시 들어야 하나요?",
-    "content": "",
+    "content": "<p>AI Bootcamp 10기 이전에 수강했는데 12기로 재수강하려면 처음부터 다시 들어야 하나요?</p>",
     "author_id": 90009,
     "file_ids": "[]",
     "group_id": null,
@@ -119,7 +119,7 @@
   {
     "id": 10010,
     "title": "AI Literacy 인증 버튼이 비활성화되어 있는데 시험 신청을 했습니다. 언제 활성화되나요?",
-    "content": "",
+    "content": "<p>AI Literacy 인증 버튼이 비활성화되어 있는데 시험 신청을 했습니다. 언제 활성화되나요?</p>",
     "author_id": 90010,
     "file_ids": "[]",
     "group_id": null,
@@ -132,7 +132,7 @@
   {
     "id": 10011,
     "title": "코드 리뷰 횟수가 다 소진되었는데 오늘 안에 추가로 리뷰를 받을 수 있나요? 리셋해주실 수 있나요?",
-    "content": "",
+    "content": "<p>코드 리뷰 횟수가 다 소진되었는데 오늘 안에 추가로 리뷰를 받을 수 있나요? 리셋해주실 수 있나요?</p>",
     "author_id": 90011,
     "file_ids": "[]",
     "group_id": null,
@@ -145,7 +145,7 @@
   {
     "id": 10012,
     "title": "수강 기간이 끝나기 전에 최종과제를 제출했는데, 기간 종료 후에 재제출이 가능한가요?",
-    "content": "",
+    "content": "<p>수강 기간이 끝나기 전에 최종과제를 제출했는데, 기간 종료 후에 재제출이 가능한가요?</p>",
     "author_id": 90012,
     "file_ids": "[]",
     "group_id": null,
@@ -158,7 +158,7 @@
   {
     "id": 10013,
     "title": "강의 중간 과제(모듈별 실습)를 제출 안 했는데 최종과제 제출에 영향이 있나요?",
-    "content": "",
+    "content": "<p>강의 중간 과제(모듈별 실습)를 제출 안 했는데 최종과제 제출에 영향이 있나요?</p>",
     "author_id": 90013,
     "file_ids": "[]",
     "group_id": null,
@@ -171,7 +171,7 @@
   {
     "id": 10014,
     "title": "코드 리뷰 횟수가 리셋되는 시점이 자정인가요? 몇 시에 초기화되나요?",
-    "content": "",
+    "content": "<p>코드 리뷰 횟수가 리셋되는 시점이 자정인가요? 몇 시에 초기화되나요?</p>",
     "author_id": 90014,
     "file_ids": "[]",
     "group_id": null,
@@ -184,7 +184,7 @@
   {
     "id": 10015,
     "title": "부트캠프 수료 기준이 정확히 뭔가요? 과제만 제출하면 되나요 아니면 점수 커트라인이 있나요?\"",
-    "content": "",
+    "content": "<p>부트캠프 수료 기준이 정확히 뭔가요? 과제만 제출하면 되나요 아니면 점수 커트라인이 있나요?\"</p>",
     "author_id": 90015,
     "file_ids": "[]",
     "group_id": null,
@@ -197,7 +197,7 @@
   {
     "id": 10016,
     "title": "AI Literacy 인증시험 결과는 어디서 확인할 수 있나요? 메일로도 오나요?",
-    "content": "",
+    "content": "<p>AI Literacy 인증시험 결과는 어디서 확인할 수 있나요? 메일로도 오나요?</p>",
     "author_id": 90016,
     "file_ids": "[]",
     "group_id": null,
@@ -210,7 +210,7 @@
   {
     "id": 10017,
     "title": "AI Bootcamp 수강 기간이 끝나면 코드 리뷰도 더 이상 사용할 수 없나요?",
-    "content": "",
+    "content": "<p>AI Bootcamp 수강 기간이 끝나면 코드 리뷰도 더 이상 사용할 수 없나요?</p>",
     "author_id": 90017,
     "file_ids": "[]",
     "group_id": null,
@@ -223,7 +223,7 @@
   {
     "id": 10018,
     "title": "AI BootCamp 과제 제출 양식의 순서에 따라 안올렸는데, 이것도 고려해서 채점이 되나요?",
-    "content": "",
+    "content": "<p>AI BootCamp 과제 제출 양식의 순서에 따라 안올렸는데, 이것도 고려해서 채점이 되나요?</p>",
     "author_id": 90018,
     "file_ids": "[]",
     "group_id": null,
@@ -236,7 +236,7 @@
   {
     "id": 10019,
     "title": "리터러시 시험 장소가 온라인가요? 오프라인 인가요?",
-    "content": "",
+    "content": "<p>리터러시 시험 장소가 온라인가요? 오프라인 인가요?</p>",
     "author_id": 90019,
     "file_ids": "[]",
     "group_id": null,
@@ -249,7 +249,7 @@
   {
     "id": 10020,
     "title": "코드리뷰에서 점수가 낮게 나왔는데 같은 코드로 다시 요청하면 점수가 달라지나요?",
-    "content": "",
+    "content": "<p>코드리뷰에서 점수가 낮게 나왔는데 같은 코드로 다시 요청하면 점수가 달라지나요?</p>",
     "author_id": 90020,
     "file_ids": "[]",
     "group_id": null,
@@ -262,7 +262,7 @@
   {
     "id": 10021,
     "title": "최종과제 제출 후에 코드리뷰를 받아볼 수 있나요? 아니면 제출 전에만 가능한가요?",
-    "content": "",
+    "content": "<p>최종과제 제출 후에 코드리뷰를 받아볼 수 있나요? 아니면 제출 전에만 가능한가요?</p>",
     "author_id": 90021,
     "file_ids": "[]",
     "group_id": null,
@@ -275,7 +275,7 @@
   {
     "id": 10022,
     "title": "AI Literacy 강의 수강 순서가 정해져 있나요? 원하는 것부터 들어도 되나요?",
-    "content": "",
+    "content": "<p>AI Literacy 강의 수강 순서가 정해져 있나요? 원하는 것부터 들어도 되나요?</p>",
     "author_id": 90022,
     "file_ids": "[]",
     "group_id": null,
@@ -288,7 +288,7 @@
   {
     "id": 10023,
     "title": "AI Bootcamp 과제를 잘못된 파일로 제출했는데 철회하고 다시 올릴 수 있나요?",
-    "content": "",
+    "content": "<p>AI Bootcamp 과제를 잘못된 파일로 제출했는데 철회하고 다시 올릴 수 있나요?</p>",
     "author_id": 90023,
     "file_ids": "[]",
     "group_id": null,
@@ -301,7 +301,7 @@
   {
     "id": 10024,
     "title": "사전연습 문제 난이도가 실제 인증시험과 비슷한가요?",
-    "content": "",
+    "content": "<p>사전연습 문제 난이도가 실제 인증시험과 비슷한가요?</p>",
     "author_id": 90024,
     "file_ids": "[]",
     "group_id": null,
@@ -314,7 +314,7 @@
   {
     "id": 10025,
     "title": "최종과제 소스코드를 제출했는데 나중에 보니 디버그용 print문을 안 지웠습니다. 평가에 영향이 있나요?",
-    "content": "",
+    "content": "<p>최종과제 소스코드를 제출했는데 나중에 보니 디버그용 print문을 안 지웠습니다. 평가에 영향이 있나요?</p>",
     "author_id": 90025,
     "file_ids": "[]",
     "group_id": null,
@@ -327,7 +327,7 @@
   {
     "id": 10026,
     "title": "AI Bootcamp 수강 중 해외에서 접속해도 문제없나요? VPN이 필요한가요?",
-    "content": "",
+    "content": "<p>AI Bootcamp 수강 중 해외에서 접속해도 문제없나요? VPN이 필요한가요?</p>",
     "author_id": 90026,
     "file_ids": "[]",
     "group_id": null,
@@ -340,7 +340,7 @@
   {
     "id": 10027,
     "title": "웹 IDE에서 실수로 파일을 삭제했는데 복구할 수 있나요?",
-    "content": "",
+    "content": "<p>웹 IDE에서 실수로 파일을 삭제했는데 복구할 수 있나요?</p>",
     "author_id": 90027,
     "file_ids": "[]",
     "group_id": null,
@@ -353,7 +353,7 @@
   {
     "id": 10028,
     "title": "최종과제에서 text-embedding-3-small 대신 다른 임베딩 모델을 써도 되나요?",
-    "content": "",
+    "content": "<p>최종과제에서 text-embedding-3-small 대신 다른 임베딩 모델을 써도 되나요?</p>",
     "author_id": 90028,
     "file_ids": "[]",
     "group_id": null,
@@ -366,7 +366,7 @@
   {
     "id": 10029,
     "title": "AI Bootcamp 수강 신청 시 사전 지식 요구사항이 있나요? Python 기초는 알아야 하나요?",
-    "content": "",
+    "content": "<p>AI Bootcamp 수강 신청 시 사전 지식 요구사항이 있나요? Python 기초는 알아야 하나요?</p>",
     "author_id": 90029,
     "file_ids": "[]",
     "group_id": null,
@@ -379,7 +379,7 @@
   {
     "id": 10030,
     "title": "AI Bootcamp 과제를 ZIP으로 압축해서 제출해야 하나요? 폴더 구조 요구사항이 있나요?",
-    "content": "",
+    "content": "<p>AI Bootcamp 과제를 ZIP으로 압축해서 제출해야 하나요? 폴더 구조 요구사항이 있나요?</p>",
     "author_id": 90030,
     "file_ids": "[]",
     "group_id": null,
@@ -392,7 +392,7 @@
   {
     "id": 192,
     "title": "코드 리뷰 제한 원복 요청 드립니다.",
-    "content": "",
+    "content": "<p>코드 리뷰 제한 원복 요청 드립니다.</p>",
     "author_id": 90031,
     "author_name": "미국 이란?",
     "file_ids": "[]",
