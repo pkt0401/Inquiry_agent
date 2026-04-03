@@ -347,7 +347,7 @@ class InquiryAgent:
         if path and os.path.exists(path):
             with open(path, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        default_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'knowledge_base.json')
+        default_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'info', 'kb', 'knowledge_base.json')
         if os.path.exists(default_path):
             with open(default_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
@@ -355,7 +355,7 @@ class InquiryAgent:
 
     def _load_schedule(self) -> Dict:
         """schedule.json 로드. 없으면 빈 딕셔너리 반환."""
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schedule.json')
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'info', 'schedule.json')
         if os.path.exists(path):
             with open(path, 'r', encoding='utf-8') as f:
                 return json.load(f)
@@ -1160,8 +1160,8 @@ def main():
     base_path = os.path.dirname(os.path.abspath(__file__))
 
     t0 = _time.time()
-    all_inquiries = load_json_file(os.path.join(base_path, 'inquiry_all.json'))
-    all_comments  = load_json_file(os.path.join(base_path, 'inquiry_comment_all.json'))
+    all_inquiries = load_json_file(os.path.join(base_path, 'info', 'inquiry_all.json'))
+    all_comments  = load_json_file(os.path.join(base_path, 'info', 'inquiry_comment_all.json'))
     print(f"[타이머] JSON 로드: {_time.time()-t0:.1f}s", flush=True)
     print(f"통합 문의 데이터: {len(all_inquiries)}건 / 댓글: {len(all_comments)}건", flush=True)
 
@@ -1313,7 +1313,7 @@ def main():
     import datetime as _dt
     timestamp = _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
     result_filename = f"eval_result_{timestamp}.json"
-    result_path = os.path.join(base_path, result_filename)
+    result_path = os.path.join(base_path, 'tests', result_filename)
 
     with open(result_path, 'w', encoding='utf-8') as f:
         json.dump({

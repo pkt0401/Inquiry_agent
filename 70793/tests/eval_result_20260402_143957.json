@@ -1,0 +1,39 @@
+{
+  "eval_info": {
+    "timestamp": "20260402_143957",
+    "test_file": ".\\test_set_1.json",
+    "total_cases": 1,
+    "rag_pool_size": 105
+  },
+  "summary": {
+    "strategy_counts": {
+      "운영자 에스컬레이션": 1,
+      "RAG 초안 + 운영자 검토": 0,
+      "RAG 자동 답변 게시": 0,
+      "에이전트 직접 실행": 0
+    },
+    "compound_count": 0
+  },
+  "results": [
+    {
+      "번호": 1,
+      "id": 10008,
+      "source": "expected_examples",
+      "author_id": 90009,
+      "title": "Ai Bootcamp 교육 시작 문의",
+      "content": "AI Literacy 인증 패스 했는데, 이제 AI BootCamp 수업을 들을려고 합니다. 하지만, 버튼이 비활성화로 되어 있는데, 이건 어떻게 해야 하나요?",
+      "personal_context": "## 문의자 수강 이력\n- 현재 과정: AI Bootcamp 12기 (진행중) — 재수강 (10기 미수료 이력 있음)\n- 전체 이력:\n  · AI Bootcamp 10기: 미수료 (점수: 35.9) — 최종과제 미제출로 미수료\n  · AI Bootcamp 12기: 진행중 — 재수강",
+      "label": "ACCOUNT_ACTION_REQUIRED",
+      "confidence": "high",
+      "strategy": "운영자 에스컬레이션",
+      "reasoning": "AI Bootcamp 수강 버튼이 비활성화되어 있어 계정/수강권한(입과) 설정 확인 및 운영자 조치가 필요한 문의입니다.",
+      "is_compound": false,
+      "sub_labels": [],
+      "answer": "",
+      "answer_confidence": "",
+      "tool_type": "",
+      "tool_result": null,
+      "actual_answer": ""
+    }
+  ]
+}

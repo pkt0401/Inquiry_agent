@@ -1,0 +1,39 @@
+{
+  "eval_info": {
+    "timestamp": "20260402_143619",
+    "test_file": ".\\test_set_1.json",
+    "total_cases": 1,
+    "rag_pool_size": 105
+  },
+  "summary": {
+    "strategy_counts": {
+      "운영자 에스컬레이션": 0,
+      "RAG 초안 + 운영자 검토": 0,
+      "RAG 자동 답변 게시": 1,
+      "에이전트 직접 실행": 0
+    },
+    "compound_count": 0
+  },
+  "results": [
+    {
+      "번호": 1,
+      "id": 10008,
+      "source": "expected_examples",
+      "author_id": 90009,
+      "title": "AI Literacy 이수 처리 문의",
+      "content": "안녕하세요. 부트캠프 수료자의 경우, AI Literacy 이수 처리 해주신 글을 봤는데 AI Literacy 이수처리 해주실수 있나요?",
+      "personal_context": "## 문의자 수강 이력\n- 현재 과정: AI Bootcamp 12기 (진행중) — 재수강 (10기 미수료 이력 있음)\n- 전체 이력:\n  · AI Bootcamp 10기: 미수료 (점수: 35.9) — 최종과제 미제출로 미수료\n  · AI Bootcamp 12기: 진행중 — 재수강",
+      "label": "COURSE_INFO",
+      "confidence": "high",
+      "strategy": "RAG 자동 답변 게시",
+      "reasoning": "AI Bootcamp 수료 시 AI Literacy도 자동 수료 처리되는지/이수 처리 요청에 대한 정책 문의에 해당",
+      "is_compound": false,
+      "sub_labels": [],
+      "answer": "안녕하세요, AI Talent Lab입니다.\n\nAI Literacy 이수 처리는 AI Bootcamp를 ‘수료’하신 경우에 자동으로 함께 처리됩니다(A등급 인정).\n문의자님은 현재 AI Bootcamp 12기 진행 중이며, 과거 10기는 최종과제 미제출로 미수료 이력이 있어 현재 시점에는 AI Literacy 이수 처리 대상이 아닙니다.\n\n12기에서 최종과제까지 제출하여 수료 처리되면 AI Literacy도 함께 이수 처리되며, 결과 발표는 2026-04-03 예정입니다.\n\n감사합니다.",
+      "answer_confidence": "high",
+      "tool_type": "",
+      "tool_result": null,
+      "actual_answer": ""
+    }
+  ]
+}
