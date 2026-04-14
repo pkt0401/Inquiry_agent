@@ -1143,6 +1143,8 @@ def main():
     parser.add_argument("--n-test",       type=int, default=20,  help="테스트케이스 수 (기본 10)")
     parser.add_argument("--random-state", type=int, default=12,  help="랜덤 시드 (기본 42)")
     parser.add_argument("--test-file",    type=str, default=None, help="테스트셋 JSON 파일 경로 (지정하면 해당 파일로 평가)")
+    parser.add_argument("--interactive",  action="store_true", help="대화형 모드 (고정 author_id로 REPL)")
+    parser.add_argument("--author-id",    type=int, default=0, help="대화형 모드에서 사용할 고정 author_id")
     args = parser.parse_args()
 
     import time as _time
@@ -1171,6 +1173,81 @@ def main():
     for c in all_comments:
         if c.get('author_id') in admin_ids:
             comment_map.setdefault(c['inquiry_id'], []).append(c)
+
+    # ── 대화형 모드 ───────────────────────────────────────────────
+    if args.interactive:
+        import datetime as _dt
+        rag_pool = [inq for inq in all_inquiries if inq['id'] in comment_map]
+        print(f"RAG pool: {len(rag_pool)}건 (admin 답변 보유 문의 전체)")
+
+        t0 = _time.time()
+        agent.load_inquiry_history(rag_pool, all_comments, pre_label=False)
+        print(f"[타이머] RAG history 로드 + 벡터 인덱스: {_time.time()-t0:.1f}s", flush=True)
+        print("Agent 준비 완료\n", flush=True)
+
+        strategy_labels_iv = {
+            Strategy.NO_RESPONSE:  "운영자 에스컬레이션",
+            Strategy.HUMAN_REVIEW: "RAG 초안 + 운영자 검토",
+            Strategy.TOOL_RAG:     "RAG 자동 답변",
+            Strategy.TOOL_ACTION:  "에이전트 직접 실행",
+        }
+
+        author_id = args.author_id
+        personal_ctx = agent.user_db.build_personal_context_str(author_id)
+        print(f"{'='*60}")
+        print(f"대화형 모드  author_id={author_id}")
+        print(f"{'='*60}")
+        if personal_ctx:
+            for line in personal_ctx.splitlines():
+                print(f"[DB] {line}")
+        else:
+            print("[DB] (수강 이력 없음)")
+        print("'exit' / 'quit' / 빈 입력 → 종료\n", flush=True)
+
+        turn = 0
+        while True:
+            try:
+                user_text = input(">>> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print()
+                break
+            if not user_text or user_text.lower() in {"exit", "quit"}:
+                break
+
+            turn += 1
+            inquiry = {
+                "id":        -turn,
+                "title":     "",
+                "content":   user_text,
+                "author_id": author_id,
+                "create_dt": _dt.datetime.now().isoformat(),
+            }
+            response = agent.process_inquiry(inquiry)
+
+            print(f"\n[Label]    {response.label.value}")
+            print(f"[Strategy] {strategy_labels_iv[response.strategy]}")
+
+            if response.tool_result is not None:
+                tr = response.tool_result
+                if tr.get("success"):
+                    print("[Tool]     성공")
+                    if "prev_used" in tr:
+                        print(f"  → 리셋 전 사용: {tr.get('prev_used', 0)}회 / "
+                              f"남은: {CODE_REVIEW_DAILY_LIMIT}회 "
+                              f"(lecture_id={tr.get('lecture_id', 'N/A')})")
+                    elif "restored" in tr:
+                        print(f"  → 복구 {tr.get('restored', 0)}회 / "
+                              f"남은 {tr.get('remaining', 'N/A')}회 "
+                              f"(literacy_test_id={tr.get('literacy_test_id', 'N/A')})")
+                else:
+                    print(f"[Tool]     실패 — {tr.get('reason', '알 수 없음')}")
+
+            if response.answer:
+                print(f"\n{response.answer}\n", flush=True)
+            else:
+                print(f"\n(답변 없음 — {response.reasoning})\n", flush=True)
+
+        return
 
     # ── 테스트셋 결정 ──────────────────────────────────────────────
     if args.test_file:
