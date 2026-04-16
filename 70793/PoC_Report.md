@@ -23,19 +23,22 @@
 
 | 구분 | 문의 | 댓글 | 비고 |
 |------|-----:|-----:|------|
-| 전체 (train+test) | 110건 | 125건 | inquiry_all.json + inquiry_comment_all.json (기존+3월 신규 병합) |
-| 테스트 (평가용) | 10건 | — | inquiry_all.json에서 random 샘플링 (random_state=42) |
-| RAG 풀 (학습용) | 100건 | — | 테스트 10건 제외 후 FAISS 인덱싱 (leakage 방지) |
+| 전체 (train+test) | 315건 | 344건 | inquiry_all.json + inquiry_comment_all.json (~2026-04-14 기준) |
+| Admin 답변 보유 | 274건 | 289건 | `author_id in ADMIN_IDS` OR `is_admin=1` (신 포맷 호환) |
+| 신규 데이터 (2026-03-11 이후) | 180건 | 196건 | 14기(8차) 및 인증시험 14차 관련 문의 다수 |
+| 테스트 (평가용) | 가변 | — | `--n-test`/`--test-file` CLI 옵션으로 조절 |
+| RAG 풀 (학습용) | ~270건 | — | 테스트 제외 후 FAISS 인덱싱 (leakage 방지) |
 
-### 문의 유형 분포 (Train 100건 기준)
+### 최신 데이터 주요 패턴 (2026-03-11 ~ 2026-04-14)
 
-| 유형 | 건수 | Agent 처리 방향 |
-|------|-----:|----------------|
-| 인증/버튼 비활성화 | 24건 | no_response (계정 직접 조치) |
-| 강의/과제/실습 관련 | 35건 | tool_rag 또는 human_review |
-| 기술 에러 (코드/API) | 15건 | tool_rag |
-| 접근/접속 문제 | 5건 | no_response (플랫폼 이슈) |
-| 기타 / 미분류 | 5건 | no_response |
+| 패턴 | 대표 예시 | KB v2.0 반영 |
+|------|----------|--------------|
+| 불합격 후 재수강·재제출 | "13기 불합격 이후 진행" | `COURSE_INFO` qa_examples 추가 |
+| 서비스 개발 재제출 시 기획문서 참조 | "제출 후 수정하여 다시 제출 가능여부" | `final_assignment.resubmit_note` 추가 |
+| 코드 리뷰 시간 소요/일관성 | "리뷰 결과가 매번 다르게 나옵니다" | `platform_features.code_review` 보강 |
+| streamlit_logs 자동 폴더 | "항목 삭제에 실패하였습니다" | `platform_features.streamlit_logs` 추가 |
+| 패키지 관리자 설치 | "[미설치] mcp - 관리자에게 요청" | `CODE_LOGIC_ERROR` qa_examples 추가 |
+| Permission / unzip 오류 | "폴더 권한 없음", "압축 해제 실패" | `error_solutions` regex 추가 |
 
 ---
 
@@ -229,9 +232,9 @@ is_draft = (strategy == 'human_review')
 
 ## 6. 사전 지식 프롬프트 (Prior Knowledge)
 
-`knowledge_base.json`의 `prior_knowledge` + `schedule.json`의 일정 정보를 **분류 프롬프트**와 **답변 생성 프롬프트** 양쪽에 동일하게 주입.
+`info/kb/knowledge_base.json`의 `prior_knowledge` + `info/schedule/*.json`(프로그램별 분리)을 합성한 일정 정보를 **분류 프롬프트**와 **답변 생성 프롬프트** 양쪽에 동일하게 주입.
 
-### Static — knowledge_base.json (거의 안 바뀌는 정보)
+### Static — info/kb/knowledge_base.json (거의 안 바뀌는 정보, 현재 v2.0.0)
 
 | 항목 | 내용 |
 |------|------|
@@ -243,20 +246,29 @@ is_draft = (strategy == 'human_review')
 | 수료 관계 | AI Bootcamp 수료 시 AI Literacy 동시 수료 처리 |
 | 재수강 | 이전 기수 수강 이력과 무관하게 새 기수 재참여 가능 |
 
-### Dynamic — schedule.json (기수마다 갱신)
+### Dynamic — info/schedule/ (프로그램별 분리, 기수마다 갱신)
 
-| 항목 | 내용 |
+`_load_schedule()`이 `info/schedule/` 폴더의 `.json` 파일을 파일명(확장자 제외)을 key로 자동 합성.
+
+| 파일 | 내용 |
 |------|------|
-| Bootcamp 현재 기수 | 12기 수강 기간, 과제 제출 마감, 결과 발표 예정일 |
-| Bootcamp 예정 기수 | 3차·4차 신청 기간·수강 기간·모집 상태 |
-| AI Literacy | 상시 운영 기간 (2026-01-01~12-31) |
-| 인증시험 | 7차 시험일 (2026-03-18), 신청 기간, 응시 방법 |
+| `bootcamp.json` | AI Bootcamp 현재 기수(14기(8차), 2026-04-20~05-15) + 예정 기수(15~20기 / 9차~14차) + 과제 제출 마감 + 결과 발표 예정일 |
+| `literacy.json` | AI Literacy 상시 운영 기간 + 인증시험 14차(시험일 2026-04-28, 신청 2026-03-26~04-26) + 응시 방법 |
+| `master_project.json` | AI Master Project 현재 5기(2026-04-06~05-29) + 예정 6~8기 + 선발 과정 안내(AX College 수강신청 불가) |
+
+### 과거 버전 보관 (info/past/)
+
+| 파일 | 유효 기간 |
+|------|----------|
+| `knowledge_base_v1_~20260403.json` | KB v1.0.1 (2026-04-03까지) |
+| `schedule_v12_~20260320.json` | Bootcamp 12기(3차) (2026-03-20까지) |
+| `schedule_v13_~20260515.json` | 과도기 composite 파일 (2026-05-15까지 추정치) |
 
 ### 효과
 
 - 분류 시: "인증 버튼 비활성화 = 정상일 수 있음"을 LLM이 알고 ACCOUNT_ACTION_REQUIRED로 정확 분류
-- 답변 시: 일정 관련 질문(다음 기수 언제, 신청 가능 여부)에 schedule.json으로 정확 답변
-- 기수 변경 시 schedule.json만 수정 → knowledge_base.json 변경 불필요
+- 답변 시: 일정 관련 질문(다음 기수 언제, 신청 가능 여부)에 schedule로 정확 답변
+- 기수 변경 시 해당 프로그램 JSON 파일만 교체 → 이전 버전은 `info/past/<name>_~YYYYMMDD.json`으로 이동. KB 변경 불필요
 
 ---
 
@@ -289,10 +301,10 @@ FAISS 검색 (순수 코사인 유사도 순)
 
 | 출처 | 문서 수 | label 여부 |
 |------|--------:|-----------|
-| KB 큐레이션 Q&A (knowledge_base.json) | ~20건 | 항상 있음 (검색 시 미사용) |
-| 에러 솔루션 (knowledge_base.json) | 5건 | CODE_LOGIC_ERROR 고정 (검색 시 미사용) |
-| history (inquiry_all.json 기반, 운영자 답변 있는 것) | ~205건 | pre_label=False (라벨 미부여, label=None) |
-| **합계** | **~230건** | |
+| KB 큐레이션 Q&A (info/kb/knowledge_base.json, v2.0) | 47건 | 항상 있음 (검색 시 미사용) |
+| 에러 솔루션 (info/kb/knowledge_base.json, v2.0) | 15건 | CODE_LOGIC_ERROR 고정 (검색 시 미사용) |
+| history (inquiry_all.json 기반, admin 답변 있는 것) | ~270건 | pre_label=False (라벨 미부여, label=None) |
+| **합계** | **~330건** | |
 
 > `pre_label=False`: history 로드 시 휴리스틱 라벨을 부여하지 않음. similarity-only 모드에서는 label을 검색 필터로 사용하지 않으므로 라벨 없이 순수 유사도로 검색.
 
@@ -347,13 +359,16 @@ FAISS 검색 (순수 코사인 유사도 순)
 
 | 파일 | 설명 |
 |------|------|
-| `inquiry_agent.py` | 메인 Agent (분류·RAG·답변 생성·strategy 결정, similarity_only=True) |
+| `inquiry_agent.py` | 메인 Agent (분류·RAG·답변 생성·strategy 결정, similarity_only=True, 대화형 `--interactive` 지원) |
 | `user_db.py` | 수강생 개인화 DB (SQLite) + Tool용 코드리뷰·연습횟수 관리 |
 | `tools.py` | Group 3 Tool 정의 및 실행기 (AUTO_TOOL / APPROVAL_TOOL) |
-| `knowledge_base.json` | 사전 지식 + 큐레이션 Q&A + 에러 솔루션 (static) |
-| `schedule.json` | 기수별 수강 일정 + 인증시험 일정 (dynamic, 기수마다 갱신) |
-| `inquiry_all.json` | 전체 문의 게시물 (110건, 기존+3월 신규 병합) — train+test 통합 소스 |
-| `inquiry_comment_all.json` | 전체 문의 댓글 (125건) |
+| `info/kb/knowledge_base.json` | 사전 지식 + 큐레이션 Q&A + 에러 솔루션 (현재 v2.0.0, 2026-04-16 갱신) |
+| `info/schedule/bootcamp.json` | AI Bootcamp 기수 일정 (현재 14기(8차)) |
+| `info/schedule/literacy.json` | AI Literacy 인증시험 일정 (현재 14차) |
+| `info/schedule/master_project.json` | AI Master Project 일정 (현재 5기) |
+| `info/past/*.json` | 과거 버전 보관 (파일명에 유효 종료일 `_~YYYYMMDD` 표기) |
+| `info/inquiry_all.json` | 전체 문의 게시물 (315건) — train+test 통합 소스 |
+| `info/inquiry_comment_all.json` | 전체 문의 댓글 (344건, admin 289건) |
 | `pipeline_viz.html` | 전체 파이프라인 시각화 (브라우저에서 열기) |
 | `embeddings_cache.pkl` | 임베딩 캐시 (재실행 시 API 미호출) |
 | `requirements.txt` | `openai>=1.0.0`, `faiss-cpu==1.7.4`, `numpy>=1.24.0,<2` |

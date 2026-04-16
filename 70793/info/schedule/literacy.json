@@ -1,0 +1,15 @@
+{
+  "course_period": { "start": "2026-01-01", "end": "2026-12-31", "note": "상시 운영" },
+  "certification_exam": {
+    "current_round": "14차",
+    "exam_date": "2026-04-28",
+    "exam_time": "10:00 ~ 11:00 (1시간)",
+    "enrollment_period": { "start": "2026-03-26", "end": "2026-04-26" },
+    "status": "접수중",
+    "capacity": { "applied": 63, "limit": 500 },
+    "credit": 1,
+    "cost": "무료 (전사교육비 지원)",
+    "learning_guide": "[공동필수]",
+    "note": "온라인 응시. 오프라인 응시는 별도 요청 필요."
+  }
+}

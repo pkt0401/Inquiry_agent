@@ -1,0 +1,45 @@
+{
+  "_comment": "13기 (4차) 일정. course_period: 2026-04-20 ~ 2026-05-15",
+  "bootcamp": {
+    "current_cohort": "13기 (4차)",
+    "cohort_cycle_weeks": 4,
+    "enrollment_period": {
+      "start": "2026-01-23",
+      "end": "2026-04-18",
+      "note": "모집 기간 외에는 수강 신청 불가"
+    },
+    "course_period": {
+      "start": "2026-04-20",
+      "end": "2026-05-15",
+      "note": "해당 기간에만 강의 수강 및 과제 제출 가능"
+    },
+    "assignment_deadline": "2026-05-15",
+    "result_announcement": "2026-05-29",
+    "notice": "10기 이후 과정 개편으로 이전 기수 수강생은 강의 재수강 필요.",
+    "upcoming_cohorts": []
+  },
+  "literacy": {
+    "course_period": { "start": "2026-01-01", "end": "2026-12-31", "note": "상시 운영" },
+    "certification_exam": {
+      "current_round": "8차",
+      "exam_date": "",
+      "enrollment_period": { "start": "", "end": "" },
+      "status": "미정",
+      "note": "온라인 응시. 오프라인 응시는 별도 요청 필요. 일정 확정 시 공지 예정."
+    }
+  },
+  "master_project": {
+    "current_cohort": "",
+    "recruitment_period": {
+      "start": "",
+      "end": ""
+    },
+    "course_period": {
+      "start": "",
+      "end": ""
+    },
+    "final_schedule": {},
+    "notice": ""
+  },
+  "global_notice": ""
+}

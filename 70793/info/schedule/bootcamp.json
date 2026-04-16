@@ -1,0 +1,31 @@
+{
+  "current_cohort": "14기 (8차)",
+  "cohort_cycle_weeks": 4,
+  "enrollment_period": {
+    "start": "2026-01-23",
+    "end": "2026-04-18",
+    "note": "마감"
+  },
+  "course_period": {
+    "start": "2026-04-20",
+    "end": "2026-05-15",
+    "note": "온라인집합, 30일 / 40시간 / 09:00~18:00"
+  },
+  "capacity": { "applied": 373, "limit": 373, "status": "마감" },
+  "credit": 5,
+  "cost": "무료 (전사교육비 지원)",
+  "assignment_deadline": "2026-05-15",
+  "result_announcement": "2026-05-29",
+  "notice": "10기 이후 과정 개편으로 이전 기수 수강생은 강의 재수강 필요.",
+  "upcoming_cohorts": [
+    { "cohort": "15기 (9차)",  "course_period": { "start": "2026-05-18", "end": "2026-06-12" } },
+    { "cohort": "16기 (10차)", "course_period": { "start": "2026-06-15", "end": "2026-07-10" } },
+    { "cohort": "17기 (11차)", "course_period": { "start": "2026-07-13", "end": "2026-08-07" } },
+    { "cohort": "18기 (12차)", "course_period": { "start": "2026-08-10", "end": "2026-09-04" } },
+    { "cohort": "19기 (13차)", "course_period": { "start": "2026-09-07", "end": "2026-10-09" } },
+    { "cohort": "20기 (14차)", "course_period": { "start": "2026-10-12", "end": "2026-11-06" } }
+  ],
+  "past_cohorts": [
+    { "cohort": "13기 (7차)", "status": "종료" }
+  ]
+}

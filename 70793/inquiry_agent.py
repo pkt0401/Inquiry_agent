@@ -342,24 +342,35 @@ class InquiryAgent:
 
     # ── Knowledge Base 로드 ────────────────────────────────────────
 
-    def _load_knowledge_base(self, path: str) -> Dict:
-        """knowledge_base.json 로드. 없으면 빈 구조 반환."""
-        if path and os.path.exists(path):
-            with open(path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        default_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'info', 'kb', 'knowledge_base.json')
-        if os.path.exists(default_path):
-            with open(default_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+    def _load_knowledge_base(self, path: str = None) -> Dict:
+        """info/kb/knowledge_base.json 로드. path가 주어지면 해당 경로 우선."""
+        base = os.path.dirname(os.path.abspath(__file__))
+        candidates = [path] if path else []
+        candidates.append(os.path.join(base, 'info', 'kb', 'knowledge_base.json'))
+        for p in candidates:
+            if p and os.path.exists(p):
+                with open(p, 'r', encoding='utf-8') as f:
+                    return json.load(f)
         return {"prior_knowledge": {}, "label_examples": {}, "error_solutions": []}
 
     def _load_schedule(self) -> Dict:
-        """schedule.json 로드. 없으면 빈 딕셔너리 반환."""
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'info', 'schedule.json')
-        if os.path.exists(path):
-            with open(path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        return {}
+        """info/schedule/ 폴더에서 프로그램별 JSON을 읽어 하나의 dict로 합성."""
+        base = os.path.dirname(os.path.abspath(__file__))
+        schedule_dir = os.path.join(base, 'info', 'schedule')
+        schedule = {}
+        if os.path.isdir(schedule_dir):
+            for fname in sorted(os.listdir(schedule_dir)):
+                if not fname.endswith('.json'):
+                    continue
+                key = os.path.splitext(fname)[0]
+                with open(os.path.join(schedule_dir, fname), 'r', encoding='utf-8') as f:
+                    schedule[key] = json.load(f)
+        if not schedule:
+            fallback = os.path.join(base, 'info', 'schedule.json')
+            if os.path.exists(fallback):
+                with open(fallback, 'r', encoding='utf-8') as f:
+                    schedule = json.load(f)
+        return schedule
 
     # ── 유틸리티 ──────────────────────────────────────────────────
 
@@ -989,7 +1000,7 @@ class InquiryAgent:
         # comment_data를 inquiry_id별로 미리 묶어서 O(n+m)으로 처리
         comment_map: Dict[int, List[Dict]] = {}
         for c in comment_data:
-            if c.get('author_id') in self.ADMIN_IDS:
+            if c.get('author_id') in self.ADMIN_IDS or c.get('is_admin'):
                 comment_map.setdefault(c['inquiry_id'], []).append(c)
 
         for inquiry in inquiry_data:
@@ -1157,6 +1168,9 @@ def main():
 
     t0 = _time.time()
     agent = InquiryAgent()
+    kb_ver = agent.kb.get("version", "?")
+    sched_keys = list(agent.schedule.keys())
+    print(f"[KB] v{kb_ver}  [Schedule] {sched_keys}")
     print(f"[타이머] Agent 초기화: {_time.time()-t0:.1f}s", flush=True)
 
     base_path = os.path.dirname(os.path.abspath(__file__))
@@ -1171,7 +1185,7 @@ def main():
     admin_ids = agent.ADMIN_IDS
     comment_map: Dict[int, List[Dict]] = {}
     for c in all_comments:
-        if c.get('author_id') in admin_ids:
+        if c.get('author_id') in admin_ids or c.get('is_admin'):
             comment_map.setdefault(c['inquiry_id'], []).append(c)
 
     # ── 대화형 모드 ───────────────────────────────────────────────

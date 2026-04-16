@@ -1,0 +1,29 @@
+{
+  "current_cohort": "5기",
+  "recruitment_period": {
+    "start": "",
+    "end": "",
+    "note": "선발 과정 — AX College 수강신청 불가. Delivery 조직은 부문기획/팀장을 통해 신청, 그 외 조직(Offering/Staff)은 교육 담당자에게 연락."
+  },
+  "course_period": {
+    "start": "2026-04-06",
+    "end": "2026-05-29",
+    "note": "8주 과정, 40시간, 09:00~18:00 온라인집합"
+  },
+  "credit": 5,
+  "education_info": {
+    "goal": "AI 기반의 문제 해결자 양성, 중급 이상의 AI 개발자로 육성",
+    "target": "AI Bootcamp 이수자",
+    "completion": "8주간 멘토링/코칭 참여, AI 프로젝트 Task 수행, 최종 PT 발표"
+  },
+  "final_schedule": {},
+  "notice": "AX College를 통한 수강신청은 관리하지 않음. AX College 개설 차수는 이수 처리 용도.",
+  "upcoming_cohorts": [
+    { "cohort": "6기", "course_period": { "start": "2026-06-01", "end": "2026-07-24" } },
+    { "cohort": "7기", "course_period": { "start": "2026-07-27", "end": "2026-09-18" } },
+    { "cohort": "8기", "course_period": { "start": "2026-09-28", "end": "2026-11-20" } }
+  ],
+  "past_cohorts": [
+    { "cohort": "4기", "course_period": { "start": "2026-01-26", "end": "2026-03-27" }, "status": "완료" }
+  ]
+}
