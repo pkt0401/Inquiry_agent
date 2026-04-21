@@ -552,22 +552,22 @@
     </div>
 
     <div style="margin-top:14px;">
-      <div style="font-size:0.75rem; color:#4ade80; font-weight:600; margin-bottom:8px;">FAISS 인덱스 구성 (~240건)</div>
+      <div style="font-size:0.75rem; color:#4ade80; font-weight:600; margin-bottom:8px;">FAISS 인덱스 구성 (~330건)</div>
       <div class="rag-index">
         <div class="idx-card">
-          <span class="idx-num">~20건</span>
+          <span class="idx-num">47건</span>
           KB 큐레이션 Q&amp;A<br>
-          <span style="color:#6ab88a;">항상 label 있음<br>inquiry_all.json 중복 제거</span>
+          <span style="color:#6ab88a;">항상 label 있음 (KB v2.0)<br>inquiry_all.json 중복 제거</span>
         </div>
         <div class="idx-card">
-          <span class="idx-num">5건</span>
+          <span class="idx-num">15건</span>
           에러 솔루션<br>
-          <span style="color:#6ab88a;">CODE_LOGIC_ERROR</span>
+          <span style="color:#6ab88a;">CODE_LOGIC_ERROR + permission/zip 등</span>
         </div>
         <div class="idx-card">
-          <span class="idx-num">~205건</span>
-          History (운영자 답변↔)<br>
-          <span style="color:#6ab88a;">inquiry_all.json 110건 기반<br>pre_label=False (라벨 미부여)</span>
+          <span class="idx-num">~270건</span>
+          History (admin 답변 보유)<br>
+          <span style="color:#6ab88a;">inquiry_all.json 315건 기반<br>pre_label=False (라벨 미부여)</span>
         </div>
       </div>
     </div>
@@ -586,7 +586,7 @@
         <div class="box-body">
           &middot; 문의 (제목 + 내용)<br>
           &middot; <strong>[참고 정보]</strong>: FAISS 검색 결과 top-3<br>
-          &middot; prior_knowledge + schedule.json<br>
+          &middot; prior_knowledge + schedule (info/schedule/*.json 합성)<br>
           &middot; 개인 컨텍스트 (user_db.py)
         </div>
       </div>
@@ -651,7 +651,7 @@
 </div>
 
 <p style="text-align:center; margin-top:24px; font-size:0.72rem; color:#555;">
-  inquiry_agent.py &nbsp;&middot;&nbsp; knowledge_base.json &nbsp;&middot;&nbsp; 2026
+  inquiry_agent.py &nbsp;&middot;&nbsp; info/kb/knowledge_base.json (v2.0) &nbsp;&middot;&nbsp; info/schedule/*.json &nbsp;&middot;&nbsp; 2026
 </p>
 
 </body>
